@@ -29,8 +29,7 @@ def search_airbnb_listing_details() -> dict:
     querystring = {"query":"New York, NY"}
 
     headers = {
-        "x-rapidapi-key": "6c3d5cd8fbmsh6d198fc2bad3880p101e53jsn7c22ceb20447",
-        "x-rapidapi-host": "airbnb-search.p.rapidapi.com"
+
     }
 
     response = requests.get(url, headers=headers, params=querystring)
