@@ -28,38 +28,46 @@ def search_airbnb_listings_lat_long(lat, lng, bedrooms, maxGuestCapacity, range=
     response = requests.get(url, headers=headers, params=querystring).json()
 
     # json file name
-    date_time = datetime.now().strftime("%d-%m-%Y_%H:%M:%S")
-    file_name=date_time+"_search_listings"
+    file_name = datetime.now().strftime("%d-%m-%Y_%H:%M:%S")
 
     # write response to json
     with open(f"jsons/search_listings/{file_name}.json", "w") as outfile:
         json.dump(response, outfile)
 
 
-def search_airbnb_listing_details(id) -> dict:
+def search_airbnb_listing_details(id) -> None:
     """
-    Pass in an airbnb id to get its details.
+    Pass in an airbnb id and write the response to json.
     """
+
+    # api url
     url = "https://airbnb-listings.p.rapidapi.com/v2/listing"
 
+    # search filters
     querystring = {"id":id}
 
-    # write to a json file
+    # load api key
     with open('key.json', 'r') as f:
         headers = json.load(f)
 
-    response = requests.get(url, headers=headers, params=querystring)
+    # store a response from the request
+    response = requests.get(url, headers=headers, params=querystring).json()
 
-    return response.json()
+    # json file name as current date and time
+    file_name = datetime.now().strftime("%d-%m-%Y_%H:%M:%S")
+
+    # write response to json
+    with open(f"jsons/search_id/{file_name}.json", "w") as outfile:
+        json.dump(response, outfile)
 
 if __name__=='__main__':
-   # args={"id":"619966061834034729"}
-    #print(search_airbnb_listing_details(**args))
+    args={"id":"619966061834034729"}
+    search_airbnb_listing_details(**args)
 
     # test the alt long search
 
     # load test args
-    with open('test_args.json', 'r') as f:
-        args = json.load(f)
+    #with open('test_args.json', 'r') as f:
+     #   args = json.load(f)
 
-    print(search_airbnb_listings_lat_long(**args))
+    #print(search_airbnb_listings_lat_long(**args))
