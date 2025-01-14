@@ -58,13 +58,13 @@ def search_airbnb_listing_details(id) -> None:
     response = requests.get(url, headers=headers, params=querystring).json()
 
     # json file name as current date and time
-    file_name = datetime.now().strftime("%d-%m-%Y_%H:%M:%S")
+    file_path = f"""jsons/search_id/{datetime.now().strftime("%d-%m-%Y_%H:%M:%S")}.json"""
 
     # write response to json
-    with open(f"jsons/search_id/{file_name}.json", "w") as outfile:
+    with open(file_path, "w") as outfile:
         json.dump(response, outfile)
 
-    return file_name
+    return file_path
 
 if __name__=='__main__':
     args={"id":"619966061834034729"}

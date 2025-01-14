@@ -33,30 +33,33 @@ def get_details(id)-> pd.DataFrame:
     Grab data from the api and output selected fields as a dataframe
     """
     # call the api and save response to disk
-    file_name = search_airbnb_listing_details(id)
+    json_file_path = search_airbnb_listing_details(id)
 
     # open the response that was saved to disk
-    with open(file_name, "r") as f:
+    with open(json_file_path, "r") as f:
         response = json.load(f)
 
     # parse into a dataframe
     airbnb_details=parse_airbnb_details(response)
 
-    # save df to a csv
-    airbnb_details.to_csv(f"""csvs/details_search/{file_name.replace('json','csv')}""", index=False)
+    # make file name for csv
+    csv_file_path = f"csvs/details_search/{json_file_path.split('/')[-1].replace('json','csv')}"
 
-    # return csv file name
-    return f"{file_name.replace('json','csv')}"
+    # save df to a csv
+    airbnb_details.to_csv(csv_file_path, index=False)
+
+    # return csv file path
+    return csv_file_path
 
 if __name__=="__main__":
-    with open('test_args.json', 'r') as f:
-        args = json.load(f)
+    #with open('test_args.json', 'r') as f:
+    #    args = json.load(f)
 
-    file_path = get_airbnbs(**args)
+    #file_path = get_airbnbs(**args)
 
-    print(file_path)
+    #print(file_path)
 
 
 
-    #id = "619966061834034729"
-    #print(get_details(id))
+    id = "16910260"
+    print(get_details(id))
