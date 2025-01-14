@@ -15,6 +15,7 @@ def parse_airbnb_listings_lat_long(response:dict) -> pd.DataFrame:
             }
         )
     airbnb_ids_df=pd.DataFrame(airbnb_ids)
+    
     return airbnb_ids_df
 
 def parse_airbnb_details(response:dict) -> pd.DataFrame:
@@ -47,6 +48,7 @@ def parse_airbnb_details(response:dict) -> pd.DataFrame:
     ]
     
     airbnb_details_df=pd.DataFrame(airbnb_details)
+
     return airbnb_details_df
 
 if __name__=='__main__':

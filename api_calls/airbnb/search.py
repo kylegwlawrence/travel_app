@@ -2,7 +2,7 @@ import requests
 import json
 from datetime import datetime
 
-def search_airbnb_listings_lat_long(lat, lng, bedrooms, maxGuestCapacity, range="500", offset="0") -> None:
+def search_airbnb_listings_lat_long(lat, lng, bedrooms, maxGuestCapacity, range="500", offset="0") -> str:
     """
     Takes search filters and writes the api response to a json file.
     Params:
@@ -12,6 +12,8 @@ def search_airbnb_listings_lat_long(lat, lng, bedrooms, maxGuestCapacity, range=
     bedrooms (str): number of bedrooms
     maxGuestCapacity (str): Max guest the listing can accomodate
     offset (str): index to start from
+
+    Returns the name of the file the json response is saved to.
     """
 
     # api url
@@ -28,11 +30,13 @@ def search_airbnb_listings_lat_long(lat, lng, bedrooms, maxGuestCapacity, range=
     response = requests.get(url, headers=headers, params=querystring).json()
 
     # json file name
-    file_name = datetime.now().strftime("%d-%m-%Y_%H:%M:%S")
+    file_name = f"""jsons/search_listings/{datetime.now().strftime("%d-%m-%Y_%H:%M:%S")}.json"""
 
     # write response to json
-    with open(f"jsons/search_listings/{file_name}.json", "w") as outfile:
+    with open(file_name, "w") as outfile:
         json.dump(response, outfile)
+
+    return file_name
 
 
 def search_airbnb_listing_details(id) -> None:
@@ -59,6 +63,8 @@ def search_airbnb_listing_details(id) -> None:
     # write response to json
     with open(f"jsons/search_id/{file_name}.json", "w") as outfile:
         json.dump(response, outfile)
+
+    return file_name
 
 if __name__=='__main__':
     args={"id":"619966061834034729"}
