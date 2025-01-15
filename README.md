@@ -38,6 +38,7 @@ At a high level, this app takes inputs for your trip and returns options by call
 - show proximity to city center (?)
 
 ### Priceline
+The free tier for [this API](https://rapidapi.com/ntd119/api/Priceline%20COM) allows 500 requests per month at a max of 1,000 requests per hour. 
 #### Fields:
 - hotel name
 - hotel id
@@ -56,6 +57,57 @@ At a high level, this app takes inputs for your trip and returns options by call
 
 ##### need:
 - star rating
+
+### Airbnb
+The free tier for [this API](https://rapidapi.com/insidebnb-team-insidebnb-team-default/api/airbnb-listings) allows 16,000 requests per month at a max of 1,000 requests per hour. 
+#### Fields:
+##### Listings by lat long
+- airbnb_id
+- distance in meters to lat long provided
+
+The max range is 20,000 metres.
+
+##### Listing details
+- airbnb_id
+- city
+- listingTitle
+- reviewCount
+- starRating
+- maxGuestCapacity
+- bedrooms
+- beds
+- bathrooms
+- bathroomsShared
+- propertyType
+- listingLat
+- listingLng
+- cancel_policy
+- min_nights
+- max_nights
+- check_in_time
+- check_out_time
+- listingstatus (what does this mean?)
+
+#### Additional API calls:
+
+##### Availability
+This API provides two endpoints to access availablity data for a specific airbnb id:
+- [availability by month](https://airbnb-listings.p.rapidapi.com/v2/listingavailability)
+- [availability for next 12 months](https://airbnb-listings.p.rapidapi.com/v2/listingAvailabilityFull)
+
+**Note**: the available field can be true but this by itself does not means that the listing can be booked. It only tells indicates that this day is not taken. To confirm if it is really available for stay you must verify that all previous and following day rules for stay length are respected. To get the real available for stay status you can use the Listing Status endpoint.
+
+##### Availability status
+This API also provides two endpoints to access availability status for a specific airbnb same as the above Availability APIs - [one month](https://airbnb-listings.p.rapidapi.com/v2/listingstatus) and [next 12 months](https://airbnb-listings.p.rapidapi.com/v2/listingStatusFull). This data is needed to confirm if a unit is actually available on a specific date since the aformentioned API may return a false positive (ie positive = available).
+
+##### Listing prices
+Same as above, there is a [one month](https://api.insidebnb.com:8443/v2/listingPrices) and [next 12 months](https://api.insidebnb.com:8443/v2/listingPricesFull) endpoint to get prices for a specific unit.
+
+##### Amenitiy codes
+[This API endpoint](https://airbnb-listings.p.rapidapi.com/v2/amenities) returns amenity ids and descriptions, 50 results only. 
+
+##### Listing reviews
+[This endpoint](https://api.insidebnb.com:8443/v2/listingReviews) returns up to 20 reviews after the specified datetime. Each reviews contains those fields: reviewid, comments, response, datetime, language, rating: 5, guest_id. Available only for properties
 
 ### Bookingdotcom
 

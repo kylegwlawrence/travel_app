@@ -51,6 +51,12 @@ def get_details(id)-> pd.DataFrame:
     # return csv file path
     return csv_file_path
 
+def get_details_multiple_listings():
+    """
+    Need to return just a dataframe from get_details to then merge all dfs into one.
+    """
+    pass
+
 if __name__=="__main__":
     #with open('test_args.json', 'r') as f:
     #    args = json.load(f)
