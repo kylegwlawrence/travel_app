@@ -4,9 +4,10 @@ import requests
 from requests.structures import CaseInsensitiveDict
 import json
 
-
-
 def geocode(address, fileout="output.json"):
+    """
+    Accepts a free form typed street address, calls a geocoding api and writes the results to disk
+    """
 
     address_formatted = address.replace(" ", "%20")
 
@@ -27,7 +28,7 @@ def geocode(address, fileout="output.json"):
         json.dump(resp.json(), f)
 
 def get_coordinates(file_path:str) -> list:
-    """Reads the coordinates out of the api results and returns them in a list"""
+    """Reads the coordinates out of the api results on disk and returns them in a list as latitude, longitude"""
     with open(file_path, "r") as f:
         d=json.load(f)
     
@@ -36,8 +37,6 @@ def get_coordinates(file_path:str) -> list:
 
     return [lat, lon]
     
-
-
 if __name__=="__main__":
     fileout="output.json"
     geocode("mixcalco 371 jose Vicente Villada, 57710 Cdad. nezahualcoyotl mexico city, mexico", fileout=fileout)
