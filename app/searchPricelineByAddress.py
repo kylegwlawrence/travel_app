@@ -20,10 +20,13 @@ def search(address:str, checkIn:str, checkOut:str, limit:int, page:int=1) -> lis
     location_ids = search_location_ids(lat, lon)
 
     # get the location_id that matches exactly to the lat lon coordinates
-    matched_location_id = location_ids["data"]["exactMatch"]["matchedCity"]["cityID"]
-
-    # use location id to search for hotels
-    hotels = search_hotels(locationId=matched_location_id, checkIn=checkIn, checkOut=checkOut, limit=limit, page=page)
+    try:
+        matched_location_id = location_ids["data"]["exactMatch"]["matchedCity"]["cityID"]
+        # use location id to search for hotels
+        hotels = search_hotels(locationId=matched_location_id, checkIn=checkIn, checkOut=checkOut, limit=limit, page=page)
+    except: 
+        print("No exactly-matching city ID available")
+        hotels=None
 
     return hotels
 
