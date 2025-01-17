@@ -24,7 +24,7 @@ def search_location_ids(lat, lon) -> dict:
 
     return response
 
-def search_hotels(locationId, checkIn, checkOut, rooms=None, adults=None, children=None, limit=None, page=None, sort=None, hotelsType=None, minPrice=None, maxPrice=None, guestScore=None, starLevel=None, neighborhoods=None, amenities=None, propertyType=None, hotelName=None) -> dict:
+def search_hotels(locationId, checkIn, checkOut, rooms=None, adults=None, children=None, limit=None, page=1, sort=None, hotelsType=None, minPrice=None, maxPrice=None, guestScore=None, starLevel=None, neighborhoods=None, amenities=None, propertyType=None, hotelName=None) -> dict:
     """
     Pass in some search terms and get results for matching hotels with details.
     """
@@ -63,7 +63,8 @@ def search_hotels(locationId, checkIn, checkOut, rooms=None, adults=None, childr
     if hotelName is not None:
         querystring["hotelName"]=hotelName
 
-    print(f"Num records returning:{limit}")
+    print(f"Returning page {page}")
+    print(f"Num records returning: {limit}")
 
     with open('api_calls/priceline/key.json', 'r') as f:
         apiKey = json.load(f)
