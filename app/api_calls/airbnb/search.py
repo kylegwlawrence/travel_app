@@ -25,10 +25,14 @@ def listings_near_lat_long(lat:int, lon:int, maxGuestCapacity:int=6, range:int=5
     with open('api_calls/airbnb/key.json', 'r') as f:
         headers = json.load(f)
 
-    response = requests.get(url, headers=headers, params=querystring)
+    response = requests.get(url, headers=headers, params=querystring).json()
+
+    # print if there is no data available.
+    if response["results"] == None:
+        print("No data available.")
 
     airbnb_ids=[]
-    for airbnb in response.json()["results"]:
+    for airbnb in response["results"]:
         airbnb_ids.append(
             {
                 "airbnb_id":airbnb["airbnb_id"]

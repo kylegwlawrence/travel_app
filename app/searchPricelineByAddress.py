@@ -1,5 +1,6 @@
 from api_calls.geocoder.app import geocode_address
 from api_calls.priceline.search import search_location_ids, search_hotels
+import pandas as pd
 
 def search(address:str, checkIn:str, checkOut:str, limit:int, page:int=1) -> list:
     """
@@ -31,4 +32,6 @@ def search(address:str, checkIn:str, checkOut:str, limit:int, page:int=1) -> lis
     return hotels
 
 if __name__=='__main__':
-    print(search("Eureka Montana", "2025-04-12", "2025-04-14", limit=2))
+    d = search("820 15 ave SW calgary ab", "2025-05-11", "2025-05-14", limit=30)
+    df = pd.DataFrame(d)
+    df.to_csv("test_priceline.csv", index=False)

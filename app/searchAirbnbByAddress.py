@@ -1,5 +1,6 @@
 from api_calls.geocoder.app import geocode_address
 from api_calls.airbnb.search import listings_near_lat_long, listing_details
+import pandas as pd
 
 def search(address:str, range:int=500):
     # get the geo coordinates for the address
@@ -19,4 +20,6 @@ def search(address:str, range:int=500):
     return list_of_airbnbs
 
 if __name__=='__main__':
-    print(search("820 15 Ave SW Calgary Ab can"))
+    d = search("820 15 ave sw calgary ab")
+    df = pd.DataFrame(d)
+    df.to_csv("test_airbnb.csv", index=False)
