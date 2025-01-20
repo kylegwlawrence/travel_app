@@ -7,7 +7,7 @@ def search_ids_near_lat_long(lat:int, lon:int, maxGuestCapacity:int=6, range:int
     Takes search filters and returns airbnb data matching the search criteria.
     Params:
     lat (int): cartesian latitude coordinate
-    lng (int): cartesian longitude coordinate
+    lon (int): cartesian longitude coordinate
     range (int): range in meters from latitude and longitude point to define search area
     bedrooms (int): number of bedrooms
     maxGuestCapacity (int): Max guest the listing can accomodate
@@ -19,30 +19,61 @@ def search_ids_near_lat_long(lat:int, lon:int, maxGuestCapacity:int=6, range:int
     # api url
     url = "https://airbnb-listings.p.rapidapi.com/v2/listingsByLatLng"
 
-    querystring = {"lat":str(lat),"lng":str(lon),"range":str(range),"offset":str(offset),"maxGuestCapacity":str(maxGuestCapacity)}
+    # build query params
+    querystring = {
+        "lat":str(lat)
+        , "lng":str(lon)
+        , "range":str(range)
+        , "offset":str(offset)
+        , "maxGuestCapacity":str(maxGuestCapacity)
+        }
 
-    # load api key
+    # load api keys
     with open('api_calls/airbnb/key.json', 'r') as f:
-        headers = json.load(f)
+        d = json.load(f)
 
-    response = requests.get(url, headers=headers, params=querystring).json()
+    # use primary key first
+    headers = {
+        "x-rapidapi-key":d["primary_key"]
+        , "x-rapidapi-host":d["x-rapidapi-host"]
+        }
 
-    # print if there is no data available.
-    if response["results"] == None:
-        print("No data available.")
+    # try calling with the primary_key
+    response = requests.get(url, headers=headers, params=querystring)
 
+    # determine if we need to try the secondary_key
+    if response.status_code != 200:
+        print(f"Primary key error, code {response.status_code}. Trying secondary key.")
+
+        # load and try the secondary_key if we get an non-200 repsonse
+        headers["x-rapidapi-key"] = d["secondary_key"]
+        response = requests.get(url, headers=headers, params=querystring)
+
+        # raise an exception if the secondary key returns anything other than a 200 code
+        if response.status_code != 200:
+            raise Exception(f"Secondary key error, code {response.status_code}")
+        
+    # convert response to json
+    response = response.json()
+    
+    # if there are no results, return an empty list
     airbnb_ids=[]
-    for airbnb in response["results"]:
-        airbnb_ids.append(
-            {
-                "airbnb_id":airbnb["airbnb_id"]
-                , "distance":airbnb["distance"]
-            }
-        )
+    if "error" in response:
+        print(f"""{response["error"]} for lat {lat} and long {lon}""")
+    
+    # save airbnb_ids and distance from lat, long to a dict
+    else:
+        for airbnb in response["results"]:
+            airbnb_ids.append(
+                {
+                    "airbnb_id":airbnb["airbnb_id"]
+                    , "distance":airbnb["distance"]
+                }
+            )
 
     return airbnb_ids
 
-def search_details(id) -> dict:
+def search_details(airbnb_id:int) -> dict:
     """
     Pass in an airbnb id and write the response to json.
     """
@@ -51,11 +82,17 @@ def search_details(id) -> dict:
     url = "https://airbnb-listings.p.rapidapi.com/v2/listing"
 
     # search filters
-    querystring = {"id":id}
+    querystring = {"id":airbnb_id}
 
     # load api key
     with open('api_calls/airbnb/key.json', 'r') as f:
-        headers = json.load(f)
+        d = json.load(f)
+
+    # choose which key to use (primary_key or secondary_key)
+    headers = {
+        "x-rapidapi-key":d["primary_key"]
+        , "x-rapidapi-host":d["x-rapidapi-host"]
+        }
 
     response = requests.get(url, headers=headers, params=querystring)
 
@@ -84,43 +121,66 @@ def search_details(id) -> dict:
 
     return airbnb_details
 
-def search_availability(airbnb_id, checkIn, checkOut):
+def get_calendar(airbnb_id:int) -> list:
     """
     Calls API and returns data on availability for a specific airbnb for the next 12 months.
+    If a date in the range of checkIn and checkOut is not available then return False, otherwise if all days are available then return True
     """
 
-    # format dates
-    checkIn = datetime.strptime(checkIn, '%Y-%m-%d')
-    checkOut = datetime.strptime(checkOut, '%Y-%m-%d')
-
-    #call the api
     url = "https://airbnb-listings.p.rapidapi.com/v2/listingAvailabilityFull"
     querystring = {"id":airbnb_id}
 
     # load api key
     with open('api_calls/airbnb/key.json', 'r') as f:
-        headers = json.load(f)
+        d = json.load(f)
 
-    response = requests.get(url, headers=headers, params=querystring).json()
+    # choose which key to use (primary_key or secondary_key)
+    headers = {
+        "x-rapidapi-key":d["primary_key"]
+        , "x-rapidapi-host":d["x-rapidapi-host"]
+        }
 
-    # in a["results"], convert each date to datetime and search over it for the range of checkin to checkout dates
-    results = response["results"]
+    # call api and receive response
+    response = requests.get(url, headers=headers, params=querystring)
 
-    # check if each requested date is available and return it as a dict in a list. 
-    available_days = []
+    # pull data from the response
+    results = response.json()["results"]
+
+    return results
+
+def search_availability(results, checkIn, checkOut) -> bool:
+    """
+    Take the results from the availability api call and determines if the airbnb is available for the range of the stay
+    """
+    # format checkin and checkout dates
+    checkIn = datetime.strptime(checkIn, '%Y-%m-%d')
+    checkOut = datetime.strptime(checkOut, '%Y-%m-%d')
+
+    # iterate over each dict in the list
     for day in results:
+
+        # format the date string as datetime
         dt = datetime.strptime(day["date"], '%Y-%m-%d')
 
-        # check if date falls within the search range
-        if dt >= checkIn and dt <= checkOut:
+        # continue to the next loop if the calendar day is not within the stay range
+        if dt < checkIn or dt > checkOut:
+            continue
 
-            # if the date is available, store it's dictionary in a list
-            if day["available_for_checkin"]==1 and day["available"]==1:
-                available_days.append(day)
+        # if the day is in the stay range then check if it is available
+        elif dt >= checkIn and dt <= checkOut:
 
-            # if a date is not available, return an empty list and end the main loop
-            if day["available_for_checkin"]==0 and day["closed_to_arrival"]!=0:
-                available_days=[]
-                raise Exception("Cannot check in on this day.")
+            # continue the loop to check if the next day is available
+            if day["available"]==1:
+                is_available = True
 
-    return available_days
+            # break the loop if there is a day in the stay range that is unavailable
+            else:
+                is_available = False
+                break
+
+    return is_available
+
+if __name__=="__main__":
+    ids = search_ids_near_lat_long(51.05, -114.07)
+
+    print(ids)
