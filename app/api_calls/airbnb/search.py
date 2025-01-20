@@ -182,5 +182,4 @@ def search_availability(results, checkIn, checkOut) -> bool:
 
 if __name__=="__main__":
     ids = search_ids_near_lat_long(51.05, -114.07)
-
     print(ids)

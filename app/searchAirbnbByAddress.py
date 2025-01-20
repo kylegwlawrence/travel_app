@@ -14,34 +14,39 @@ def search_address(address:str, checkIn:str, checkOut:str, range:int=500):
     # find airbnbs near the set of coordinates
     ids_near_address = search_ids_near_lat_long(str(lat), str(lon), range=str(range))
 
-    # find which airbnbs are available and grab their listing details
-    # iterate over each airbnb found within the search range
-    list_of_airbnbs = []
-    for airbnb in ids_near_address:
+    # pass by the remainder of the function if there are no results
+    if len(ids_near_address) == 0:
+        pass
 
-        # get the unique id
-        airbnb_id = airbnb["airbnb_id"]
+    else:
+        # find which airbnbs are available and grab their listing details
+        # iterate over each airbnb found within the search range
+        list_of_airbnbs = []
+        for airbnb in ids_near_address:
 
-        # airbnb being itereated over now
-        print(f"Searching Airbnb ID: {airbnb_id}")
+            # get the unique id
+            airbnb_id = airbnb["airbnb_id"]
 
-        # retrieve availability for each airbnb
-        calendar = get_calendar(airbnb_id)
-        is_available = search_availability(calendar, checkIn, checkOut)
+            # airbnb being itereated over now
+            print(f"Searching Airbnb ID: {airbnb_id}")
 
-        # if this airbnb is not available then move onto next airbnb
-        if is_available==False:
-            print(f"Airbnb {airbnb_id} not available")
-            continue
+            # retrieve availability for each airbnb
+            calendar = get_calendar(airbnb_id)
+            is_available = search_availability(calendar, checkIn, checkOut)
 
-        # get listing data if the airbnb is available
-        elif is_available:
-            # retrieve listing details for each airbnb
-            airbnb_details = search_details(airbnb_id)
-            list_of_airbnbs.append(airbnb_details)
+            # if this airbnb is not available then move onto next airbnb
+            if is_available==False:
+                print(f"Airbnb {airbnb_id} not available")
+                continue
 
-        else:
-            raise Exception("is_available is neither True nor False")
+            # get listing data if the airbnb is available
+            elif is_available:
+                # retrieve listing details for each airbnb
+                airbnb_details = search_details(airbnb_id)
+                list_of_airbnbs.append(airbnb_details)
+
+            else:
+                raise Exception("Parameter returned `is_available` is neither True nor False")
         
     return list_of_airbnbs
 
