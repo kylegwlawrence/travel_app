@@ -1,7 +1,5 @@
 from api_calls.geocoder.app import geocode_address
 from api_calls.airbnb.search import search_ids_near_lat_long, search_details, search_availability, get_calendar
-import pandas as pd
-from datetime import datetime
 
 def search_address(address:str, checkIn:str, checkOut:str, range:int=500):
     """
@@ -53,5 +51,5 @@ def search_address(address:str, checkIn:str, checkOut:str, range:int=500):
 if __name__=='__main__':
     checkIn = "2025-05-10"
     checkOut = "2025-05-14"
-    a = search_address("820 15 Ave SW Calgary Alberta", checkIn, checkOut, range=1000)
+    a = search_address("820 15 Ave SW Calgary Alberta", checkIn, checkOut, range=500)
     print(a)

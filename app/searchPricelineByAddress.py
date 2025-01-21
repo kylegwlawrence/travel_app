@@ -20,11 +20,13 @@ def search(address:str, checkIn:str, checkOut:str, limit:int, page:int=1) -> lis
     # find location ids near set of coordinates
     location_ids = search_location_ids(lat, lon)
 
-    # get the location_id that matches exactly to the lat lon coordinates
+    # try to get the location_id that matches exactly to the lat lon coordinates
     try:
         matched_location_id = location_ids["data"]["exactMatch"]["matchedCity"]["cityID"]
         # use location id to search for hotels
         hotels = search_hotels(locationId=matched_location_id, checkIn=checkIn, checkOut=checkOut, limit=limit, page=page)
+    
+    # return None if there is an error finding the exactly matching city
     except: 
         print("No exactly-matching city ID available")
         hotels=None
@@ -32,6 +34,6 @@ def search(address:str, checkIn:str, checkOut:str, limit:int, page:int=1) -> lis
     return hotels
 
 if __name__=='__main__':
-    d = search("820 15 ave SW calgary ab", "2025-05-11", "2025-05-14", limit=30)
+    d = search("820 15 ave SW calgary ab", "2025-05-11", "2025-05-14", limit=10)
     df = pd.DataFrame(d)
     df.to_csv("test_priceline.csv", index=False)

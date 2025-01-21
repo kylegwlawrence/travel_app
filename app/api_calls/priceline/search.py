@@ -2,18 +2,28 @@ import requests
 import json
 
 def search_location_ids(lat, lon) -> dict:
+    """
+    Searches for hotels near a given lat and long set of coordinates. 
+    Returns the response as a dictionary
+    """
+
+    # set api url
     url = "https://priceline-com2.p.rapidapi.com/hotels/nearby"
 
+    # define query
     querystring = {"latitude":str(lat),"longitude":str(lon)}
 
+    # load api key
     with open('api_calls/priceline/key.json', 'r') as f:
         apiKey = json.load(f)
 
+    # define headers
     headers = {
         "x-rapidapi-key":apiKey["x-rapidapi-key"]
         , "x-rapidapi-host": "priceline-com2.p.rapidapi.com"
     }
                
+    # call api and get a response
     response = requests.get(url, headers=headers, params=querystring)
     response = response.json()
     print(response["message"])
@@ -28,10 +38,14 @@ def search_hotels(locationId, checkIn, checkOut, rooms=None, adults=None, childr
     """
     Pass in some search terms and get results for matching hotels with details.
     """
+
+    # set api url
     url = "https://priceline-com2.p.rapidapi.com/hotels/search"
 
+    # define query
     querystring = {"locationId":locationId, "checkIn":checkIn, "checkOut": checkOut}
 
+    # add params to the querystring if they are passed into the function args
     if rooms is not None:
         querystring["rooms"]=rooms
     if adults is not None:
@@ -66,14 +80,17 @@ def search_hotels(locationId, checkIn, checkOut, rooms=None, adults=None, childr
     print(f"Returning page {page}")
     print(f"Num records returning: {limit}")
 
+    # load apikey
     with open('api_calls/priceline/key.json', 'r') as f:
         apiKey = json.load(f)
 
+    # define headers
     headers = {
         "x-rapidapi-key":apiKey["x-rapidapi-key"]
         , "x-rapidapi-host": "priceline-com2.p.rapidapi.com"
     }
 
+    # call api and get a response
     response = requests.get(url, headers=headers, params=querystring)
     response = response.json()
     print(response["message"])
@@ -82,7 +99,7 @@ def search_hotels(locationId, checkIn, checkOut, rooms=None, adults=None, childr
     if response["data"] == None:
         print("No data available.")
 
-    # add checkIn and checkOut dates to the response
+    # add checkIn and checkOut dates to the data that will be returned
     response["checkIn"]=checkIn
     response["checkOut"]=checkOut
 
