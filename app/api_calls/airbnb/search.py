@@ -84,15 +84,30 @@ def search_details(airbnb_id:int) -> dict:
     # search filters
     querystring = {"id":airbnb_id}
 
-    # load api key
+    # load api keys
     with open('api_calls/airbnb/key.json', 'r') as f:
         d = json.load(f)
 
-    # choose which key to use (primary_key or secondary_key)
+    # use primary key first
     headers = {
         "x-rapidapi-key":d["primary_key"]
         , "x-rapidapi-host":d["x-rapidapi-host"]
         }
+
+    # try calling with the primary_key
+    response = requests.get(url, headers=headers, params=querystring)
+
+    # determine if we need to try the secondary_key
+    if response.status_code != 200:
+        print(f"Primary key error, code {response.status_code}. Trying secondary key.")
+
+        # load and try the secondary_key if we get an non-200 repsonse
+        headers["x-rapidapi-key"] = d["secondary_key"]
+        response = requests.get(url, headers=headers, params=querystring)
+
+        # raise an exception if the secondary key returns anything other than a 200 code
+        if response.status_code != 200:
+            raise Exception(f"Secondary key error, code {response.status_code}")
 
     response = requests.get(url, headers=headers, params=querystring)
 
@@ -130,15 +145,30 @@ def get_calendar(airbnb_id:int) -> list:
     url = "https://airbnb-listings.p.rapidapi.com/v2/listingAvailabilityFull"
     querystring = {"id":airbnb_id}
 
-    # load api key
+    # load api keys
     with open('api_calls/airbnb/key.json', 'r') as f:
         d = json.load(f)
 
-    # choose which key to use (primary_key or secondary_key)
+    # use primary key first
     headers = {
         "x-rapidapi-key":d["primary_key"]
         , "x-rapidapi-host":d["x-rapidapi-host"]
         }
+
+    # try calling with the primary_key
+    response = requests.get(url, headers=headers, params=querystring)
+
+    # determine if we need to try the secondary_key
+    if response.status_code != 200:
+        print(f"Primary key error, code {response.status_code}. Trying secondary key.")
+
+        # load and try the secondary_key if we get an non-200 repsonse
+        headers["x-rapidapi-key"] = d["secondary_key"]
+        response = requests.get(url, headers=headers, params=querystring)
+
+        # raise an exception if the secondary key returns anything other than a 200 code
+        if response.status_code != 200:
+            raise Exception(f"Secondary key error, code {response.status_code}")
 
     # call api and receive response
     response = requests.get(url, headers=headers, params=querystring)
