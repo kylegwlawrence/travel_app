@@ -6,9 +6,9 @@
 import requests
 import json
 
-def get_driving_directions(coordinates:list) -> str:
+def get_driving_directions(coordinates:list) -> dict:
     """
-    Pass in a list of a list of coordinates and write the response containing driving directions to disk.
+    Pass in a list of a list of coordinates and return the directions as a geojson formatted dict.
     If only list of coordinates are passed - one start and one end - then one segment of directions is returned. If more than 2 sets of coordinates are provided then there are multiple segments of directions returned. 
 
     An example: coordinates=[[8.681495,49.41461],[8.686507,49.41943],[8.687872,49.420318]]. This will give directions between the first two lists of coordinates as segment one and then directions between the last two coordinates as segment two. 
@@ -31,7 +31,7 @@ def get_driving_directions(coordinates:list) -> str:
     body = {"coordinates":reversed_coordinates}
 
     # read api key
-    with open("key.json", "r") as f:
+    with open("api_calls/driving_directions/key.json", "r") as f:
         apiKey=json.load(f)
 
     # define headers for api request
@@ -42,16 +42,10 @@ def get_driving_directions(coordinates:list) -> str:
     }
 
     # call api and log status to console
-    call = requests.post('https://api.openrouteservice.org/v2/directions/driving-car', json=body, headers=headers)
+    call = requests.post('https://api.openrouteservice.org/v2/directions/driving-car/geojson', json=body, headers=headers)
     print(call.status_code, call.reason)
 
-    # write response to json
-    file_name="output.json"
-    with open(file_name, "w") as outfile:
-        json.dump(call.json(), outfile)
-    
-    # return the name of the file json is written to
-    return file_name
+    return call.json()
 
 if __name__=='__main__':
     # some coordinates in Germany
@@ -62,5 +56,5 @@ if __name__=='__main__':
     eugene = [44.048323, -123.089221]
     hb = [33.720074, -118.012771]
 
-    json_file_name=get_driving_directions([bham, eugene, hb])
-    print(json_file_name)
+    d=get_driving_directions([bham, eugene, hb])
+    print(d)
