@@ -1,7 +1,7 @@
 from api_calls.geocoder.app import geocode_address
 from api_calls.airbnb.search import search_ids_near_lat_long, search_details, search_availability, get_calendar
 
-def search(address:str, checkIn:str, checkOut:str, range:int=500):
+def search(address:str, checkIn:str, checkOut:str, range:int=500) -> list:
     """
     Searches for airbnbs and returns the listing details for each airbnb. 
 

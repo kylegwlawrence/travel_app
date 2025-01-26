@@ -2,12 +2,16 @@ from searchAirbnbByAddress import search as searchAirbnb
 from searchPricelineByAddress import search as searchPriceline
 import pandas as pd
 
-def search_all_stays(address:str, checkIn:str, checkOut:str, range:int=500, limit:int=10, page:int=1):
+def search_all_stays(address:str, checkIn:str, checkOut:str, range:int=500, limit:int=10, page:int=1) -> pd.DataFrame:
     """
     Takes all accommodation apis and searches across all of them with one function.
-    range (metres from searched address) applies only to airbnbs.
-    limit (number of results returned per page) applies only to priceline hotels.
-    page (1-base indexed page of results) applies only to priceline hotels.
+
+    Params:
+    range (int): metres from searched address, applies only to airbnbs.
+    limit (int): number of results returned per page, applies only to priceline hotels.
+    page (int): 1-base indexed page of results, applies only to priceline hotels.
+
+    Returns: DataFrame with details for airbnbs and priceline hotels within the search parameters
     """
 
     # search all accommodation sources
@@ -74,8 +78,6 @@ def search_all_stays(address:str, checkIn:str, checkOut:str, range:int=500, limi
 
     # union dataframes
     df = pd.concat([df_airbnbs, df_hotels])
-
-    # geocode correct ranges/proximities to search coords/address to stay consistent between stay types
     
     return df
 

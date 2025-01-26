@@ -34,9 +34,31 @@ def search_location_ids(lat, lon) -> dict:
 
     return response
 
-def search_hotels(locationId, checkIn, checkOut, rooms=None, adults=None, children=None, limit=None, page=1, sort=None, hotelsType=None, minPrice=None, maxPrice=None, guestScore=None, starLevel=None, neighborhoods=None, amenities=None, propertyType=None, hotelName=None) -> dict:
+def search_hotels(locationId, checkIn, checkOut, rooms=None, adults=None, children=None, limit=None, page=1, sort=None, hotelsType=None, minPrice=None, maxPrice=None, guestScore=None, starLevel=None, neighborhoods=None, amenities=None, propertyType=None, hotelName=None) -> list:
     """
-    Pass in some search terms and get results for matching hotels with details.
+    Pass in some search terms to get results for matching hotels with details.
+
+    Params:
+    locationId ():
+    checkIn ():
+    checkOut ():
+    rooms ():
+    adults ():
+    children ():
+    limit ():
+    page ():
+    sort ():
+    hotelsType ():
+    minPrice ():
+    maxPrioce ():
+    guestScore ():
+    starLevel ():
+    neighborhoods ():
+    amenities ():
+    propertyType ():
+    hotelName ():
+
+    Returns: a list of dictionaries where each dictionary contains details for one hotel
     """
 
     # set api url

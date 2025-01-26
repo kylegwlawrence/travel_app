@@ -9,15 +9,16 @@ import json
 def get_driving_directions(coordinates:list) -> str:
     """
     Pass in a list of a list of coordinates and write the response containing driving directions to disk.
-
-    coordinates (list of lists of floats): a list of a list of cartesian coordinates that define start and end points for each segment. Must be format [latitude, longitude].
-
-    Returns (str): json file name the response is written to. 
-
     If only list of coordinates are passed - one start and one end - then one segment of directions is returned. If more than 2 sets of coordinates are provided then there are multiple segments of directions returned. 
 
     An example: coordinates=[[8.681495,49.41461],[8.686507,49.41943],[8.687872,49.420318]]. This will give directions between the first two lists of coordinates as segment one and then directions between the last two coordinates as segment two. 
+
+    Params:
+    coordinates (list of lists of floats): a list of a list of cartesian coordinates that define start and end points for each segment. Must be format [latitude, longitude].
+
+    Returns (str): json file name the response is written to. 
     """
+
     # reverse the individual lists of coordinates for the api input. API takes longitude, latitude instead of standard latitude, longitude. 
     print(coordinates)
     reversed_coordinates=[]   
