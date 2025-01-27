@@ -20,7 +20,6 @@ def search_driving_directions(coordinates:list) -> dict:
     """
 
     # reverse the individual lists of coordinates for the api input. API takes longitude, latitude instead of standard latitude, longitude. 
-    print(coordinates)
     reversed_coordinates=[]   
     for c in coordinates:
         r = c[::-1]
@@ -46,7 +45,7 @@ def search_driving_directions(coordinates:list) -> dict:
 
     return call.json()
 
-def parse_info(response:dict) -> list:
+def parse_info(addresses:list, response:dict) -> list:
     """
     Takes the response from the driving directions api and parses out key information.
 
@@ -57,22 +56,34 @@ def parse_info(response:dict) -> list:
     list of dicts of key information for driving:
     - distance in metres
     - duration in seconds
+    - lat long coordinates
     """
+
     key_info = []
     segment_number = 1
+
+    # access the segments info
     for segment in response["features"][0]["properties"]["segments"]:
+
+        # grab key segment info
         distance = segment["distance"]
         duration = segment["duration"]
-        d = {"segment_number":segment_number, "distance":distance, "duration":duration}
+
+        # start and endpoints per segment
+        start_address = addresses[segment_number-1]
+        end_address = addresses[segment_number]
+
+        # add each segment info to list
+        d = {
+            "segment_number":segment_number
+            , "distance":distance
+            , "duration":duration
+            , "start_address":start_address
+            , "end_address":end_address}
+        
         key_info.append(d)
+
+        # move to next segment
         segment_number+=1
 
     return key_info
-    
-if __name__=='__main__':
-    # use output_directions.json to dev the parsing function
-    with open("output_directions.json", "r") as f:
-        response = json.load(f)
-
-    key_info = parse_info(response)
-    print(key_info)

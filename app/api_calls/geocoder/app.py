@@ -29,6 +29,3 @@ def geocode_address(address) -> list:
     lon = d["features"][0]["properties"]["lon"]
 
     return lat, lon
-    
-if __name__=="__main__":
-    print(geocode_address("mixcalco 371 jose Vicente Villada, 57710 Cdad. nezahualcoyotl mexico city, mexico"))

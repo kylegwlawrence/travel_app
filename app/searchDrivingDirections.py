@@ -30,13 +30,12 @@ def search(addresses:list):
     with open("output_directions.json", "w") as f:
         json.dump(driving_directions, f)
 
+    return driving_directions
+
 if __name__=="__main__":
     
-    addresses = ["1709 F Street bellingham wa", "seattle, wa", "olympia, wa", "brooklyn, new york city"]
-    search(addresses)
+    addresses = ["1709 F Street bellingham wa", "125 N Samish Way, Bellingham, WA 98225", "2300 Bill McDonald Pkwy, Bellingham, WA 98225", "1009 Larrabee Ave, Bellingham, WA 98225"]
+    directions = search(addresses)
 
-    with open("output_directions.json", "r") as f:
-        response = json.load(f)
-
-    key_info = parse_info(response)
+    key_info = parse_info(addresses, directions)
     print(key_info)
