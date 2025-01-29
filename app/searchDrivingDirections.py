@@ -19,23 +19,22 @@ def search(addresses:list):
     # geocode the addresses
     geocoded_addresses = []
     for address in addresses:
-        # get lat and long from geocoder
+
+        # get lat and long from geocoder and add it to the geocoded address list
         lat, long = geocode_address(address)
-        # add to list
         geocoded_addresses.append([lat, long])
 
-    # directions between the ordered addresses using lat and long
+    # search for directions between the ordered addresses using lat and long
     driving_directions = search_driving_directions(geocoded_addresses)
 
-    with open("output_directions.json", "w") as f:
-        json.dump(driving_directions, f)
+    # pull the important information out of the results
+    important_info = parse_info(addresses, driving_directions)
 
-    return driving_directions
+    return important_info
 
 if __name__=="__main__":
     
-    addresses = ["1709 F Street bellingham wa", "125 N Samish Way, Bellingham, WA 98225", "2300 Bill McDonald Pkwy, Bellingham, WA 98225", "1009 Larrabee Ave, Bellingham, WA 98225"]
+    addresses = ["1709 F Street bellingham wa", "125 N Samish Way, Bellingham, WA 98225", "1009 Larrabee Ave, Bellingham, WA 98225"]
     directions = search(addresses)
 
-    key_info = parse_info(addresses, directions)
-    print(key_info)
+    print(directions)

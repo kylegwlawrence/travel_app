@@ -38,20 +38,17 @@ def search(address:str, checkIn:str, checkOut:str, range:int=500) -> list:
             # get the unique id
             airbnb_id = airbnb["airbnb_id"]
 
-            # airbnb being itereated over now
-            print(f"Searching Airbnb ID: {airbnb_id}")
-
             # retrieve availability for each airbnb
             calendar = get_calendar(airbnb_id)
             is_available = search_availability(calendar, checkIn, checkOut)
 
             # if this airbnb is not available then move onto next airbnb
             if is_available==False:
-                print(f"Airbnb {airbnb_id} not available")
                 continue
 
             # get listing data if the airbnb is available
             elif is_available:
+                
                 # retrieve listing details for each airbnb
                 airbnb_details = search_details(airbnb_id)
                 list_of_airbnbs.append(airbnb_details)

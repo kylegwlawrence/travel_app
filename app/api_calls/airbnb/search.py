@@ -43,7 +43,7 @@ def search_ids_near_lat_long(lat:int, lon:int, maxGuestCapacity:int=6, range:int
 
     # determine if we need to try the secondary_key
     if response.status_code != 200:
-        print(f"Primary key error, code {response.status_code}. Trying secondary key.")
+        print(f"Airbnb primary key error, code {response.status_code}. Trying secondary key.")
 
         # load and try the secondary_key if we get an non-200 repsonse
         headers["x-rapidapi-key"] = d["secondary_key"]
@@ -99,7 +99,7 @@ def search_details(airbnb_id:int) -> dict:
 
     # determine if we need to try the secondary_key
     if response.status_code != 200:
-        print(f"Primary key error, code {response.status_code}. Trying secondary key.")
+        print(f"Airbnb primary key error, code {response.status_code}. Trying secondary key.")
 
         # load and try the secondary_key if we get an non-200 repsonse
         headers["x-rapidapi-key"] = d["secondary_key"]
@@ -160,7 +160,7 @@ def get_calendar(airbnb_id:int) -> list:
 
     # determine if we need to try the secondary_key
     if response.status_code != 200:
-        print(f"Primary key error, code {response.status_code}. Trying secondary key.")
+        print(f"Airbnb primary key error, code {response.status_code}. Trying secondary key.")
 
         # load and try the secondary_key if we get an non-200 repsonse
         headers["x-rapidapi-key"] = d["secondary_key"]

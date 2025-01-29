@@ -78,10 +78,12 @@ def search_all_stays(address:str, checkIn:str, checkOut:str, range:int=500, limi
 
     # union dataframes
     df = pd.concat([df_airbnbs, df_hotels])
+
+    # add timestamp
+    df['createdTimestamp'] = pd.Timestamp.now()  
     
     return df
 
-
 if __name__=='__main__':
     df = search_all_stays("820 15 ave SW calgary ab", "2025-05-11", "2025-05-14", range=500, limit=10, page=1)
-    df.to_csv("test_stays.csv", index=False)
+    df.to_csv("output/stays.csv", index=False)

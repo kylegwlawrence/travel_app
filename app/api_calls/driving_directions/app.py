@@ -43,6 +43,9 @@ def search_driving_directions(coordinates:list) -> dict:
     call = requests.post('https://api.openrouteservice.org/v2/directions/driving-car/geojson', json=body, headers=headers)
     print(call.status_code, call.reason)
 
+    if call.status_code!=200:
+        print(call.json())
+
     return call.json()
 
 def parse_info(addresses:list, response:dict) -> list:
@@ -59,13 +62,13 @@ def parse_info(addresses:list, response:dict) -> list:
     - lat long coordinates
     """
 
-    key_info = []
+    important_info = []
     segment_number = 1
 
     # access the segments info
     for segment in response["features"][0]["properties"]["segments"]:
 
-        # grab key segment info
+        # grab the important segment info
         distance = segment["distance"]
         duration = segment["duration"]
 
@@ -81,9 +84,9 @@ def parse_info(addresses:list, response:dict) -> list:
             , "start_address":start_address
             , "end_address":end_address}
         
-        key_info.append(d)
+        important_info.append(d)
 
         # move to next segment
         segment_number+=1
 
-    return key_info
+    return important_info

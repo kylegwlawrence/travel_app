@@ -26,7 +26,7 @@ def search_location_ids(lat, lon) -> dict:
     # call api and get a response
     response = requests.get(url, headers=headers, params=querystring)
     response = response.json()
-    print(response["message"])
+    print(f"""Api response for {url}\n{response["message"]}""")
 
     # print if there is no data available.
     if response["data"] == None:
@@ -99,9 +99,6 @@ def search_hotels(locationId, checkIn, checkOut, rooms=None, adults=None, childr
     if hotelName is not None:
         querystring["hotelName"]=hotelName
 
-    print(f"Returning page {page}")
-    print(f"Num records returning: {limit}")
-
     # load apikey
     with open('api_calls/priceline/key.json', 'r') as f:
         apiKey = json.load(f)
@@ -115,7 +112,7 @@ def search_hotels(locationId, checkIn, checkOut, rooms=None, adults=None, childr
     # call api and get a response
     response = requests.get(url, headers=headers, params=querystring)
     response = response.json()
-    print(response["message"])
+    print(f"""Api response for {url}\n{response["message"]}""")
 
     # print if there is no data available.
     if response["data"] == None:

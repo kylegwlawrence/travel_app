@@ -4,7 +4,7 @@ import requests
 from requests.structures import CaseInsensitiveDict
 import json
 
-def geocode_address(address) -> list:
+def geocode_address(address) -> tuple:
     """
     Accepts a free form typed street address and returns two variables, lat and lon
     """
@@ -21,7 +21,7 @@ def geocode_address(address) -> list:
     headers["Accept"] = "application/json"
 
     resp = requests.get(url, headers=headers)
-    print(resp.status_code)
+    print(f"Response from Geoapify geocoder:\n{resp.status_code}")
 
     d = resp.json()
 
