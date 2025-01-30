@@ -5,7 +5,7 @@ import math
 
 # search both driving directions and stays for a road trip. 
 
-def search(addresses:list, stay_args:dict=None, max_driving_duration_per_day_hrs:float=7, rest_every_n_hrs:float=3, rest_duration_hrs:float=0.25) -> dict:
+def _getSegmentInfo(addresses:list, stay_args:dict=None, max_driving_duration_per_day_hrs:float=7, rest_every_n_hrs:float=3, rest_duration_hrs:float=0.25) -> dict:
     """
     Searches for stays and recommends how to split up driving directions into multiple segments, if applicable.
 
@@ -15,12 +15,12 @@ def search(addresses:list, stay_args:dict=None, max_driving_duration_per_day_hrs
 
     To determine how many stays are required for the road trip:
         Step 1: get the duration of the entire trip from the api response
-        Step 2: get minimum number of segments for the trip by dividing the total trip duration by the max_driving_duration_per_day_hrs
+        Step 2: get minimum number of segments for the trip by dividing the total trip duration by the max_driving_duration_per_day_hrs and round up to the nearest whole number
 
     To determine total time spent travelling between two destinations:
         Step 1: get total resting duration per segment, equal to the max_driving_duration_per_day_hrs divided by rest_every_n_hrs, rounded down, times resting_duration_hrs
             - the first divisor term is rounded down since there will be one less rest stop that there are number of segment-parts per day
-        Step 2: get segment_driving_duration, equal to segment_max_driving_duration arg plus the total resting duration for the segment from step 2
+        Step 2: get segment_driving_duration, equal to segment_max_driving_duration arg plus the total resting duration for the segment from step 1 above
 
     Params:
         addresses (list): a list of addresses defining the targetted start, mid, and endpoint destinations for the road trip. Must have at least 2 addresses.
@@ -33,24 +33,39 @@ def search(addresses:list, stay_args:dict=None, max_driving_duration_per_day_hrs
         A dictionary of recommended driving directions and stays.
     """
     
-    # determine how many segments are required for the trip factoring in resting periods
-        # 1. determine the duration of the entire trip
+    # get the duration of the entire trip from the api response
+    # call directions API
     driving_directions = searchDrivingDirections(addresses)
+
+    # add up the durations from each segment
     total_trip_duration=0
     for segment in driving_directions:
         total_trip_duration += float(segment["duration"])
 
-        # 2. divide the total trip duration by the max segment duration (add resting every n hours) to get the min number of segments required for the trip
+    # convert total trip duration from seconds to hours
+    total_trip_duration_hrs = total_trip_duration/(60**2)
 
-    n_segments = max(0, (total_trip_duration / ((segment_max_duration*60*60)-(60*60)))) # arbitrarily adding 1 hour of resting per segment as seconds
+    # get minimum number of segments for the trip
+    min_segments_required = math.ceil(total_trip_duration_hrs / max_driving_duration_per_day_hrs)
 
-    n_segments_rounded = math.ceil(n_segments)
+    # total resting duration per segment
+    if total_trip_duration_hrs<rest_every_n_hrs:
+        total_resting_duration_hrs=0
+    else:
+        total_resting_duration_hrs = math.floor(max_driving_duration_per_day_hrs / rest_every_n_hrs)*rest_duration_hrs
 
-    return n_segments, n_segments_rounded
+    # get segment_driving_duration, equal to segment_max_driving_duration arg plus the total resting duration for the segment from step 2
+    max_segment_duration = max_driving_duration_per_day_hrs + total_resting_duration_hrs
 
-    # find the latitudes and longitudes (ie a polygon) of the area at the end of each segment
-        # 1. search for driving directions to the end of the first segment that meets the timing criteria
-            # to do this, either find an api that can provide this or write some code to search over an estimated range of lats/longs based on an initial educated guess (seed)
+    # store all info in a dict
+    segment_info = {
+        "total_trip_duration_hrs":total_trip_duration_hrs
+        , "min_segments_required":min_segments_required
+        , "total_resting_duration_hrs":total_resting_duration_hrs
+        , "max_segment_duration":max_segment_duration
+        }
+
+    return segment_info
 
     # search for stays within these coordinates (polygons)
 
@@ -61,4 +76,4 @@ def search(addresses:list, stay_args:dict=None, max_driving_duration_per_day_hrs
     #stays = search_all_stays(**stay_args)
 
 if __name__=="__main__":
-    print(search(["paris france", "dubrovnik"]))
+    print(_getSegmentInfo(["innisfail alberta", "red deer alberta"]))
