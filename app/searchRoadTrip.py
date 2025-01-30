@@ -30,7 +30,7 @@ def _getSegmentInfo(addresses:list, stay_args:dict=None, max_driving_duration_pe
         rest_duration_hrs (float): how long, in hours, to rest
 
     Returns:
-        A dictionary of recommended driving directions and stays.
+        A dictionary of driving segment information.
     """
     
     # get the duration of the entire trip from the api response
@@ -52,10 +52,11 @@ def _getSegmentInfo(addresses:list, stay_args:dict=None, max_driving_duration_pe
     if total_trip_duration_hrs<rest_every_n_hrs:
         total_resting_duration_hrs=0
     else:
-        total_resting_duration_hrs = math.floor(max_driving_duration_per_day_hrs / rest_every_n_hrs)*rest_duration_hrs
+        total_resting_duration_per_segment = math.floor(max_driving_duration_per_day_hrs / rest_every_n_hrs)*rest_duration_hrs
+        total_resting_duration_hrs = total_resting_duration_per_segment*min_segments_required
 
     # get segment_driving_duration, equal to segment_max_driving_duration arg plus the total resting duration for the segment from step 2
-    max_segment_duration = max_driving_duration_per_day_hrs + total_resting_duration_hrs
+    max_segment_duration = max_driving_duration_per_day_hrs + total_resting_duration_per_segment
 
     # store all info in a dict
     segment_info = {
@@ -67,13 +68,5 @@ def _getSegmentInfo(addresses:list, stay_args:dict=None, max_driving_duration_pe
 
     return segment_info
 
-    # search for stays within these coordinates (polygons)
-
-    # filter down to a few reccommendations using some criteria
-        # star ratings, guest ratings, proximity, price, pets allowed, parking, bed size, n beds
-
-
-    #stays = search_all_stays(**stay_args)
-
 if __name__=="__main__":
-    print(_getSegmentInfo(["innisfail alberta", "red deer alberta"]))
+    print(_getSegmentInfo(["innisfail alberta", "Winnipeg manitoba"]))
