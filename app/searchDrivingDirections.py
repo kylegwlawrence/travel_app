@@ -28,9 +28,9 @@ def search(addresses:list):
     driving_directions = search_driving_directions(geocoded_addresses)
 
     # pull the important information out of the results
-    important_info = parse_info(addresses, driving_directions)
+    #important_info = parse_info(addresses, driving_directions)
 
-    return important_info
+    return driving_directions
 
 if __name__=="__main__":
     
