@@ -11,7 +11,8 @@ def search_all_stays(address:str, checkIn:str, checkOut:str, range:int=500, limi
     limit (int): number of results returned per page, applies only to priceline hotels.
     page (int): 1-base indexed page of results, applies only to priceline hotels.
 
-    Returns: DataFrame with details for airbnbs and priceline hotels within the search parameters
+    Returns: 
+    - DataFrame with details for airbnbs and priceline hotels within the search parameters
     """
 
     # search all accommodation sources
@@ -67,7 +68,7 @@ def search_all_stays(address:str, checkIn:str, checkOut:str, range:int=500, limi
     df_airbnbs.rename(columns=cols_airbnb, inplace=True)
     df_hotels.rename(columns=cols_hotels, inplace=True)
 
-    # impost column order
+    # impose column order
     col_order = ['accomodationId', 'accomodationTitle', 'city', 'avgGuestRating', 'checkIn', 'checkOut', 'lat', 'long']
     df_airbnbs = df_airbnbs[col_order]
     df_hotels = df_hotels[col_order]

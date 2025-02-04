@@ -3,14 +3,14 @@ import os
 
 def search_location_ids(lat:float, lon:float) -> dict:
     """
-    Searches for hotels near a given lat and long set of coordinates.
+    Calls a priceline API to get the priceline location id for a given lat long. 
 
     Params:
     lat (float): latitude
     lon (float): longitude
 
     Returns:
-    - the response as a dictionary
+    - dict from API response containing priceline info for the given lat long
     """
 
     # endpoint
