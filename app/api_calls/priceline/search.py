@@ -1,5 +1,6 @@
 import requests
 import json
+import os
 
 def search_location_ids(lat, lon) -> dict:
     """
@@ -13,13 +14,9 @@ def search_location_ids(lat, lon) -> dict:
     # define query
     querystring = {"latitude":str(lat),"longitude":str(lon)}
 
-    # load api key
-    with open('api_calls/priceline/key.json', 'r') as f:
-        apiKey = json.load(f)
-
     # define headers
     headers = {
-        "x-rapidapi-key":apiKey["x-rapidapi-key"]
+        "x-rapidapi-key":os.environ["PRICELINE_KEY"]
         , "x-rapidapi-host": "priceline-com2.p.rapidapi.com"
     }
                
@@ -99,13 +96,9 @@ def search_hotels(locationId, checkIn, checkOut, rooms=None, adults=None, childr
     if hotelName is not None:
         querystring["hotelName"]=hotelName
 
-    # load apikey
-    with open('api_calls/priceline/key.json', 'r') as f:
-        apiKey = json.load(f)
-
     # define headers
     headers = {
-        "x-rapidapi-key":apiKey["x-rapidapi-key"]
+        "x-rapidapi-key":os.environ["PRICELINE_KEY"]
         , "x-rapidapi-host": "priceline-com2.p.rapidapi.com"
     }
 

@@ -1,5 +1,6 @@
 import requests
 import json
+import os
 from datetime import datetime
 
 def search_ids_near_lat_long(lat:int, lon:int, maxGuestCapacity:int=6, range:int=500, offset:int=0) -> list:
@@ -27,15 +28,11 @@ def search_ids_near_lat_long(lat:int, lon:int, maxGuestCapacity:int=6, range:int
         , "offset":str(offset)
         , "maxGuestCapacity":str(maxGuestCapacity)
         }
-
-    # load api keys
-    with open('api_calls/airbnb/key.json', 'r') as f:
-        d = json.load(f)
-
+    
     # use primary key first
     headers = {
-        "x-rapidapi-key":d["primary_key"]
-        , "x-rapidapi-host":d["x-rapidapi-host"]
+        "x-rapidapi-key":os.environ["AIRBNB_KEY_1"]
+        , "x-rapidapi-host":"airbnb-listings.p.rapidapi.com"
         }
 
     # try calling with the primary_key
@@ -46,7 +43,7 @@ def search_ids_near_lat_long(lat:int, lon:int, maxGuestCapacity:int=6, range:int
         print(f"Airbnb primary key error, code {response.status_code}. Trying secondary key.")
 
         # load and try the secondary_key if we get an non-200 repsonse
-        headers["x-rapidapi-key"] = d["secondary_key"]
+        headers["x-rapidapi-key"] = os.environ["AIRBNB_KEY_2"]
         response = requests.get(url, headers=headers, params=querystring)
 
         # raise an exception if the secondary key returns anything other than a 200 code
@@ -84,14 +81,10 @@ def search_details(airbnb_id:int) -> dict:
     # search filters
     querystring = {"id":airbnb_id}
 
-    # load api keys
-    with open('api_calls/airbnb/key.json', 'r') as f:
-        d = json.load(f)
-
     # use primary key first
     headers = {
-        "x-rapidapi-key":d["primary_key"]
-        , "x-rapidapi-host":d["x-rapidapi-host"]
+        "x-rapidapi-key":os.environ["AIRBNB_KEY_1"]
+        , "x-rapidapi-host":"airbnb-listings.p.rapidapi.com"
         }
 
     # try calling with the primary_key
@@ -102,7 +95,7 @@ def search_details(airbnb_id:int) -> dict:
         print(f"Airbnb primary key error, code {response.status_code}. Trying secondary key.")
 
         # load and try the secondary_key if we get an non-200 repsonse
-        headers["x-rapidapi-key"] = d["secondary_key"]
+        headers["x-rapidapi-key"] = os.environ["AIRBNB_KEY_2"]
         response = requests.get(url, headers=headers, params=querystring)
 
         # raise an exception if the secondary key returns anything other than a 200 code
@@ -145,14 +138,10 @@ def get_calendar(airbnb_id:int) -> list:
     url = "https://airbnb-listings.p.rapidapi.com/v2/listingAvailabilityFull"
     querystring = {"id":airbnb_id}
 
-    # load api keys
-    with open('api_calls/airbnb/key.json', 'r') as f:
-        d = json.load(f)
-
     # use primary key first
     headers = {
-        "x-rapidapi-key":d["primary_key"]
-        , "x-rapidapi-host":d["x-rapidapi-host"]
+        "x-rapidapi-key":os.environ["AIRBNB_KEY_1"]
+        , "x-rapidapi-host":"airbnb-listings.p.rapidapi.com"
         }
 
     # try calling with the primary_key
@@ -163,7 +152,7 @@ def get_calendar(airbnb_id:int) -> list:
         print(f"Airbnb primary key error, code {response.status_code}. Trying secondary key.")
 
         # load and try the secondary_key if we get an non-200 repsonse
-        headers["x-rapidapi-key"] = d["secondary_key"]
+        headers["x-rapidapi-key"] = os.environ["AIRBNB_KEY_2"]
         response = requests.get(url, headers=headers, params=querystring)
 
         # raise an exception if the secondary key returns anything other than a 200 code
@@ -211,5 +200,4 @@ def search_availability(results, checkIn, checkOut) -> bool:
     return is_available
 
 if __name__=="__main__":
-    ids = search_ids_near_lat_long(51.05, -114.07)
-    print(ids)
+    print(os.environ["AIRBNB_KEY_1"])

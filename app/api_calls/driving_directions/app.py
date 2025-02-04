@@ -5,6 +5,7 @@
 
 import requests
 import json
+import os
 
 def search_driving_directions(coordinates:list) -> dict:
     """
@@ -28,14 +29,10 @@ def search_driving_directions(coordinates:list) -> dict:
     # pass in a list of a list of coordinates as floats with at least two sets of coordinates
     body = {"coordinates":reversed_coordinates}
 
-    # read api key
-    with open("api_calls/driving_directions/key.json", "r") as f:
-        apiKey=json.load(f)
-
     # define headers for api request
     headers = {
         'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
-        'Authorization': apiKey["apiKey"],
+        'Authorization': os.environ["OPENROUTE_KEY"],
         'Content-Type': 'application/json; charset=utf-8'
     }
 

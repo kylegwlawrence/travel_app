@@ -3,6 +3,7 @@
 import requests
 from requests.structures import CaseInsensitiveDict
 import json
+import os
 
 def geocode_address(address) -> tuple:
     """
@@ -11,11 +12,8 @@ def geocode_address(address) -> tuple:
 
     address_formatted = address.replace(" ", "%20")
 
-    # read api key
-    with open("api_calls/geocoder/key.json", "r") as f:
-        apiKey=json.load(f)["apiKey"]
 
-    url = f"https://api.geoapify.com/v1/geocode/search?text={address_formatted}&apiKey={apiKey}"
+    url = f"https://api.geoapify.com/v1/geocode/search?text={address_formatted}&apiKey={os.environ["GEOAPIFY_KEY"]}"
 
     headers = CaseInsensitiveDict()
     headers["Accept"] = "application/json"
