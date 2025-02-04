@@ -1,17 +1,22 @@
 import requests
-import json
 import os
 
-def search_location_ids(lat, lon) -> dict:
+def search_location_ids(lat:float, lon:float) -> dict:
     """
-    Searches for hotels near a given lat and long set of coordinates. 
-    Returns the response as a dictionary
+    Searches for hotels near a given lat and long set of coordinates.
+
+    Params:
+    lat (float): latitude
+    lon (float): longitude
+
+    Returns:
+    - the response as a dictionary
     """
 
-    # set api url
+    # endpoint
     url = "https://priceline-com2.p.rapidapi.com/hotels/nearby"
 
-    # define query
+    # query
     querystring = {"latitude":str(lat),"longitude":str(lon)}
 
     # define headers
@@ -31,37 +36,38 @@ def search_location_ids(lat, lon) -> dict:
 
     return response
 
-def search_hotels(locationId, checkIn, checkOut, rooms=None, adults=None, children=None, limit=None, page=1, sort=None, hotelsType=None, minPrice=None, maxPrice=None, guestScore=None, starLevel=None, neighborhoods=None, amenities=None, propertyType=None, hotelName=None) -> list:
+def search_hotels(locationId:str, checkIn:str, checkOut:str, rooms:int=None, adults:int=None, children:int=None, limit:int=None, page:int=1, sort:str=None, hotelsType:str=None, minPrice:float=None, maxPrice:float=None, guestScore:float=None, starLevel:float=None, neighborhoods:str=None, amenities:str=None, propertyType:str=None, hotelName:str=None) -> list:
     """
-    Pass in some search terms to get results for matching hotels with details.
+    Get details for hotels that match the search criteria.
 
     Params:
-    locationId ():
-    checkIn ():
-    checkOut ():
-    rooms ():
-    adults ():
-    children ():
-    limit ():
-    page ():
-    sort ():
-    hotelsType ():
-    minPrice ():
-    maxPrioce ():
-    guestScore ():
-    starLevel ():
-    neighborhoods ():
-    amenities ():
-    propertyType ():
-    hotelName ():
+    locationId (str): priceline's location id for the hotel
+    checkIn (str): check in date. YYYY-MM-DD
+    checkOut (str): check out date. YYYY-MM-DD
+    rooms (int): number of rooms
+    adults (int): number of adults
+    children (int): number of children
+    limit (int): number of results to display
+    page (int): page number of resuts to display. Defaults to first page.
+    sort (str): sort by various fields (not yet tested)
+    hotelsType (str): type/category of hotel (not yet tested)
+    minPrice (float): minimum nightly rate
+    maxPrioce (float): maximum nightly rate
+    guestScore (float): avg guest rating out of 10
+    starLevel (float): star "tier" rating out of 5
+    neighborhoods (str): neighborhood name (not yet tested)
+    amenities (str): such as pet friendly, pool, etc (not yet tested)
+    propertyType (str): not yet tested
+    hotelName (str): not yet tested
 
-    Returns: a list of dictionaries where each dictionary contains details for one hotel
+    Returns: 
+    - a list of dictionaries where each dictionary contains details for one hotel
     """
 
-    # set api url
+    # endpoint
     url = "https://priceline-com2.p.rapidapi.com/hotels/search"
 
-    # define query
+    # query
     querystring = {"locationId":locationId, "checkIn":checkIn, "checkOut": checkOut}
 
     # add params to the querystring if they are passed into the function args
@@ -105,7 +111,6 @@ def search_hotels(locationId, checkIn, checkOut, rooms=None, adults=None, childr
     # call api and get a response
     response = requests.get(url, headers=headers, params=querystring)
     response = response.json()
-    print(f"""Api response for {url}\n{response["message"]}""")
 
     # print if there is no data available.
     if response["data"] == None:
