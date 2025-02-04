@@ -1,10 +1,4 @@
-# open route api: https://openrouteservice.org/dev/#/api-docs/introduction
-# free and open source. limit of 2,000 driving direction api calls per day @ max 40 per minute
-# points of interest api: limit 500 per day @ max 60 per minute
-# isochrones (reachability within a radius): limit 500 per day @ max 20 per minute
-
 import requests
-import json
 import os
 
 def search_driving_directions(coordinates:list) -> dict:
@@ -17,7 +11,8 @@ def search_driving_directions(coordinates:list) -> dict:
     Params:
     coordinates (list of lists of floats): a list of a list of cartesian coordinates that define start and end points for each segment. Must be format [latitude, longitude].
 
-    Returns (str): dict of driving directions
+    Returns: 
+    - dict of driving directions
     """
 
     # reverse the individual lists of coordinates for the api input. API takes longitude, latitude instead of standard latitude, longitude. 
@@ -26,7 +21,7 @@ def search_driving_directions(coordinates:list) -> dict:
         r = c[::-1]
         reversed_coordinates.append(r)
 
-    # pass in a list of a list of coordinates as floats with at least two sets of coordinates
+    # pass in at least 2 sets of coordinates
     body = {"coordinates":reversed_coordinates}
 
     # define headers for api request
@@ -40,6 +35,7 @@ def search_driving_directions(coordinates:list) -> dict:
     call = requests.post('https://api.openrouteservice.org/v2/directions/driving-car/geojson', json=body, headers=headers)
     print(call.status_code, call.reason)
 
+    # log to console if we get a non-200 response
     if call.status_code!=200:
         print(call.json())
 
@@ -50,15 +46,18 @@ def parse_info(addresses:list, response:dict) -> list:
     Takes the response from the driving directions api and parses out key information.
 
     Params:
+    addresses (list): list of addresses defining each segment sequentially
     response (dict): the response dictionary from the api call
 
     Returns:
-    list of dicts of key information for driving:
-    - distance in metres
-    - duration in seconds
-    - lat long coordinates
+    - list of dicts of key information for driving:
+        - segment number
+        - distance in metres
+        - duration in seconds
+        - start and end addresses
     """
 
+    # init vars
     important_info = []
     segment_number = 1
 
@@ -80,7 +79,6 @@ def parse_info(addresses:list, response:dict) -> list:
             , "duration":duration
             , "start_address":start_address
             , "end_address":end_address}
-        
         important_info.append(d)
 
         # move to next segment
