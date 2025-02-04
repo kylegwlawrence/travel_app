@@ -1,4 +1,4 @@
-from api_calls.geocoder.app import geocode_address
+from app.api_calls.geocoder.search import geocode_address
 from api_calls.priceline.search import search_location_ids, search_hotels
 import pandas as pd
 

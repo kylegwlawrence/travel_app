@@ -25,7 +25,7 @@ def search_location_ids(lat, lon) -> dict:
     response = response.json()
     print(f"""Api response for {url}\n{response["message"]}""")
 
-    # print if there is no data available.
+    # log to console if there is no data available.
     if response["data"] == None:
         print("No data available.")
 

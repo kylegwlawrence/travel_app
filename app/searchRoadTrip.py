@@ -2,7 +2,7 @@ from searchStays import search_all_stays
 from searchDrivingDirections import search as searchDrivingDirections
 import pandas as pd
 import math
-from api_calls.driving_directions.app import search_driving_directions, parse_info
+from app.api_calls.driving_directions.search import search_driving_directions, parse_info
 
 def _getSegmentDurationInfo(driving_directions:list, max_driving_duration_per_day_hrs:float=7, rest_every_n_hrs:float=3, rest_duration_hrs:float=0.33) -> dict:
     """

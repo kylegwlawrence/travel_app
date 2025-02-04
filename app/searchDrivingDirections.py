@@ -1,5 +1,5 @@
-from api_calls.geocoder.app import geocode_address
-from api_calls.driving_directions.app import search_driving_directions, parse_info
+from app.api_calls.geocoder.search import geocode_address
+from app.api_calls.driving_directions.search import search_driving_directions, parse_info
 import json
 
 def search(addresses:list):
