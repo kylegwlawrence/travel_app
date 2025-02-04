@@ -16,8 +16,11 @@ def geocode_address(address:str) -> tuple:
     # format street address for url
     address_formatted = address.replace(" ", "%20")
 
+    # use env variable for key
+    apiKey = os.environ["GEOAPIFY_KEY"]
+
     # endpoint
-    url = f"https://api.geoapify.com/v1/geocode/search?text={address_formatted}&apiKey={os.environ["GEOAPIFY_KEY"]}"
+    url = f"https://api.geoapify.com/v1/geocode/search?text={address_formatted}&apiKey={apiKey}"
 
     headers = CaseInsensitiveDict()
     headers["Accept"] = "application/json"
@@ -31,3 +34,9 @@ def geocode_address(address:str) -> tuple:
     lon = d["features"][0]["properties"]["lon"]
 
     return lat, lon
+
+if __name__=="__main__":
+    address = "1709 F Street Bellingham WA"
+    lat, long = geocode_address(address)
+
+    print(lat, long)

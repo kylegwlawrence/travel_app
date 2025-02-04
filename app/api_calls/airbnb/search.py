@@ -3,7 +3,7 @@ import json
 import os
 from datetime import datetime
 
-def search_ids_near_lat_long(lat:int, lon:int, maxGuestCapacity:int=6, range:int=500, offset:int=0) -> list:
+def search_near_lat_long(lat:int, lon:int, maxGuestCapacity:int=6, range:int=500, offset:int=0) -> list:
     """
     Takes search filters and returns airbnb ids matching the search criteria.
 

@@ -1,5 +1,5 @@
 from app.api_calls.geocoder.search import geocode_address
-from api_calls.airbnb.search import search_ids_near_lat_long, search_details, search_availability, get_calendar
+from api_calls.airbnb.search import search_near_lat_long, search_details, search_availability, get_calendar
 
 def search(address:str, checkIn:str, checkOut:str, range:int=500) -> list:
     """
@@ -21,7 +21,7 @@ def search(address:str, checkIn:str, checkOut:str, range:int=500) -> list:
     lat, lon = geocode_address(address)
 
     # find airbnbs near the set of coordinates
-    ids_near_address = search_ids_near_lat_long(str(lat), str(lon), range=str(range))
+    ids_near_address = search_near_lat_long(str(lat), str(lon), range=str(range))
 
     # hold airbnb listing details
     list_of_airbnbs = []
