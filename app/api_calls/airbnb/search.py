@@ -184,7 +184,7 @@ def get_calendar(airbnb_id:int) -> list:
 
     return results
 
-def search_availability(results, checkIn, checkOut) -> bool:
+def search_availability(results:list, checkIn:str, checkOut:str) -> bool:
     """
     Take the list of results from the availability api call and determines if the airbnb is available for the range of the requested dates.
 
