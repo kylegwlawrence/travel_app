@@ -3,7 +3,7 @@ from api_calls.airbnb.search import search_ids_near_lat_long, search_details, se
 
 def search(address:str, checkIn:str, checkOut:str, range:int=500) -> list:
     """
-    Searches for airbnbs and returns the listing details for each airbnb. 
+    Searches for airbnbs and returns the listing details for each airbnb as a list of dictionaries
 
     Params:
     address (str): free form address for the search centroid
@@ -23,22 +23,21 @@ def search(address:str, checkIn:str, checkOut:str, range:int=500) -> list:
     # find airbnbs near the set of coordinates
     ids_near_address = search_ids_near_lat_long(str(lat), str(lon), range=str(range))
 
-    # list will hold airbnb listing details
+    # hold airbnb listing details
     list_of_airbnbs = []
 
     # pass by the remainder of the function if there are no results
     if len(ids_near_address) == 0:
         pass
 
+    # find which airbnbs are available and grab their listing details
     else:
-        # find which airbnbs are available and grab their listing details
-        # iterate over each airbnb found within the search range
         for airbnb in ids_near_address:
 
-            # get the unique id
+            # get the unique airbnb id
             airbnb_id = airbnb["airbnb_id"]
 
-            # retrieve availability for each airbnb
+            # retrieve availability dates
             calendar = get_calendar(airbnb_id)
             is_available = search_availability(calendar, checkIn, checkOut)
 
@@ -46,15 +45,14 @@ def search(address:str, checkIn:str, checkOut:str, range:int=500) -> list:
             if is_available==False:
                 continue
 
-            # get listing data if the airbnb is available
+            # if it is available, get listing details
             elif is_available:
-                
-                # retrieve listing details for each airbnb
                 airbnb_details = search_details(airbnb_id)
                 list_of_airbnbs.append(airbnb_details)
 
+            # raise value error if "is_available" is neither True nor False
             else:
-                raise Exception("Parameter returned `is_available` is neither True nor False")
+                raise ValueError(f"""Parameter returned "is_available" = {is_available} is neither True nor False""")
         
     return list_of_airbnbs
 
