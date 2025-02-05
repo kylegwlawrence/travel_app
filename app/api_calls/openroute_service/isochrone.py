@@ -1,8 +1,10 @@
 import json
 import requests
 import os
+from shapely.geometry import Polygon
+import pointpats 
 
-def get_isochrone(coordinates:list, driving_times:list) -> dict:
+def request_isochrone(coordinates:list, driving_times:list) -> dict:
     """
     Pass in one or multiple sets of coordinates to get an area that is accessible within a given driving time.
 
@@ -47,72 +49,32 @@ def get_isochrone(coordinates:list, driving_times:list) -> dict:
 
     return call.json()
 
-def calculate_isochrone_box(isochrone_dict:dict) -> dict:
+def generate_coords_in_isochrone(isochrone:dict, n:int=30) -> list:
     """
-    Create a regular rectangle around the isochrone that fits all points just within it by using the max value for each of the four directions. Use this to create a matrix of coords to search over systematically.
+    Creates a list of n random coordinates that are contained `within` the isochrone
 
     Params:
-    isochrone (dict): the isochrone from the openroute service API
+    isochrone (dict): dict object returned from isochrone api call
+    n (int): number of coordinates to generate. Defaults to 30.
 
     Returns:
-    a dict of tuples (lat, lon) that define the vertices of the rectangle
+    list of coordinate tuples
     """
-   
-    # access the coords within the isochrone dict
-    isochrone_coords = isochrone_dict["features"][0]["geometry"]["coordinates"][0]
 
-    # init vars
-    highest_lat = None
-    highest_lon = None
-    lowest_lat = None
-    lowest_lon = None
+    # coordinates of polygon edges
+    coords = isochrone["features"][0]["geometry"]["coordinates"][0]
+    polygon = Polygon(coords)
 
-    # iterate over the coords defining the isochrone polygon:
-    for coord in isochrone_coords:
+    # generates n random coords inside polygon
+    random_coords = pointpats.random.poisson(polygon, size=n)
 
-        # remember openroute service formats their coordinates unconventionally as long, lat
-        lat = coord[1]
-        lon = coord[0]
-
-        # most northern point (highest lat)
-        if highest_lat == None or highest_lat < lat:
-            highest_lat = lat
-
-        # most southern point (lowest lat)
-        if lowest_lat== None or lowest_lat > lat:
-            lowest_lat = lat
-
-        # most eastern point (highest lon)
-        if highest_lon == None or highest_lon < lon:
-            highest_lon = lon
-
-        # most western point (lowest lon)
-        if lowest_lon == None or lowest_lon > lon:
-            lowest_lon = lon
-
-    # create vertices coordinates
-    vertices = {
-        "north-east": (highest_lat, highest_lon),
-        "north-west": (highest_lat, lowest_lon),
-        "south-east": (lowest_lat, highest_lon),
-        "south-west": (lowest_lat, lowest_lon)
-        }
-
-    return vertices
-
+    return random_coords
 
 if __name__=="__main__":
-    coords = [
-        [49.41461,8.681495]
-        ]
-    
-    range = [0.05]
+    coords = [[49.41461,8.681495]]
+    range = [0.5]
 
-    isos = get_isochrone(coords, range)
+    isos = request_isochrone(coords, range)
+    random_coords = generate_coords_in_isochrone(isos)
 
-    vertices = calculate_isochrone_box(isos)
-
-    print(vertices)
-
-    #with open('data.json', 'w') as f:
-    #    json.dump(isos, f)
+    print(random_coords)
