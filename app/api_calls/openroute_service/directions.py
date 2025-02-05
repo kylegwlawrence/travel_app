@@ -1,5 +1,6 @@
 import requests
 import os
+import json
 
 def search_driving_directions(coordinates:list) -> dict:
     """
@@ -85,57 +86,3 @@ def parse_info(addresses:list, response:dict) -> list:
         segment_number+=1
 
     return important_info
-
-def search_isochrone(coordinates:list, driving_times:list) -> dict:
-    """
-    Pass in one or multiple sets of coordinates to get an area that is accessible within a given driving time.
-
-    Params:
-    coordinates (list of lists of floats): list of a lists of coordinates (lat long)
-    driving_time (list of floats): length of driving times in hours to define the boundaries of the isochrone. Pass in a list of multiple values to get multiple isochrones per location.
-
-    Returns:
-    - dict of isochrone geometry objects
-    """
-
-    # endpoint
-    url = "https://api.openrouteservice.org/v2/isochrones/driving-car"
-
-    # reverse the individual lists of coordinates for the api input. API takes longitude, latitude instead of standard latitude, longitude. 
-    reversed_coordinates=[]   
-    for c in coordinates:
-        r = c[::-1]
-        reversed_coordinates.append(r)
-
-    # convert driving times to seconds
-    driving_times_seconds = [hrs*60*60 for hrs in driving_times]
-
-    # query
-    query = {"locations":reversed_coordinates, "range":driving_times_seconds}
-
-    headers = {
-        'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
-        'Authorization': os.environ["OPENROUTE_KEY"],
-        'Content-Type': 'application/json; charset=utf-8'
-    }
-
-    # call api and log status to console
-    call = requests.post(url, json=query, headers=headers)
-    print(call.status_code, call.reason)
-    if call.status_code!=200:
-        print(call.json())
-
-    return call.json()
-
-
-if __name__=="__main__":
-    coords = [
-        [49.41461,8.681495]
-        , [49.41943,8.686507]
-        ]
-    
-    range = [0.05]
-
-    isos = search_isochrone(coords, range)
-
-    print(isos)

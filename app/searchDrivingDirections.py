@@ -1,5 +1,5 @@
 from api_calls.geocoder.search import geocode_address
-from api_calls.driving_directions.search import search_driving_directions
+from api_calls.openroute_service.directions import search_driving_directions
 
 def search(addresses:list) -> list:
     """
@@ -22,14 +22,14 @@ def search(addresses:list) -> list:
         lat, long = geocode_address(address)
         geocoded_addresses.append([lat, long])
 
-    # search for directions between the ordered lat long coordinates
+    # search for driving directions
     driving_directions = search_driving_directions(geocoded_addresses)
 
     return driving_directions
 
 if __name__=="__main__":
     
-    addresses = ["1709 F Street bellingham wa", "125 N Samish Way, Bellingham, WA 98225", "1009 Larrabee Ave, Bellingham, WA 98225"]
+    addresses = ["1709 F Street bellingham wa", "Blaine Washington"]
     directions = search(addresses)
 
     print(directions)

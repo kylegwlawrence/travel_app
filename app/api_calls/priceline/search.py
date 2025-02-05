@@ -3,14 +3,14 @@ import os
 
 def search_location_ids(lat:float, lon:float) -> dict:
     """
-    Calls a priceline API to get the priceline location id for a given lat long. 
+    Calls a priceline API to get the Priceline location id (eg. id for NYC) for a given lat long. 
 
     Params:
     lat (float): latitude
     lon (float): longitude
 
     Returns:
-    - dict from API response containing priceline info for the given lat long
+    - dict from API response containing Priceline info for the given lat long
     """
 
     # endpoint
