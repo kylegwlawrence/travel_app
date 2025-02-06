@@ -26,7 +26,10 @@ def geocode_address(address:str) -> tuple:
     headers["Accept"] = "application/json"
 
     resp = requests.get(url, headers=headers)
-    print(f"Response from Geoapify geocoder:\n{resp.status_code}")
+
+    # log to console if we get a non-200 response
+    if resp.status_code!=200:
+        print(resp.json())
 
     d = resp.json()
 

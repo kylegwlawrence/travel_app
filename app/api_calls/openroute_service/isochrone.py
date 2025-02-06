@@ -51,7 +51,7 @@ def request_isochrone(coordinates:list, driving_times:list) -> dict:
 
 def generate_coords_in_isochrone(isochrone:dict, n:int=30) -> list:
     """
-    Creates a list of n random coordinates that are contained `within` the isochrone
+    Creates a list of n random coordinates that are contained within the isochrone
 
     Params:
     isochrone (dict): dict object returned from isochrone api call

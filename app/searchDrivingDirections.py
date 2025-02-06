@@ -1,5 +1,6 @@
 from api_calls.geocoder.search import geocode_address
-from api_calls.openroute_service.directions import search_driving_directions
+from api_calls.openroute_service.directions import search_driving_directions, get_driving_steps
+import json
 
 def search(addresses:list) -> list:
     """
@@ -29,7 +30,13 @@ def search(addresses:list) -> list:
 
 if __name__=="__main__":
     
-    addresses = ["1709 F Street bellingham wa", "Blaine Washington"]
+    addresses = ["1709 F Street bellingham wa", "Blaine Washington", "114 H Street Road, Lynden Washington"]
     directions = search(addresses)
 
-    print(directions)
+    with open("dd_test.json", "w+") as f:
+        json.dump(directions, f)
+
+    steps = get_driving_steps(directions)
+
+    with open("steps_test.json", "w+") as f:
+        json.dump(steps, f)
