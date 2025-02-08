@@ -2,3 +2,4 @@
 .venv/
 *.csv
 __pycache__/
+.DS_store

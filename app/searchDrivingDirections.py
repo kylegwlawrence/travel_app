@@ -1,5 +1,5 @@
 from api_calls.geocoder.search import geocode_address
-from api_calls.openroute_service.directions import search_driving_directions, get_driving_steps
+from api_calls.openroute_service.directions import search_driving_directions, get_driving_steps, get_driving_days
 import json
 
 def search(addresses:list) -> list:
@@ -29,14 +29,32 @@ def search(addresses:list) -> list:
     return driving_directions
 
 if __name__=="__main__":
+
+    # write results to disk for debugging
+    write_results = True
     
-    addresses = ["1709 F Street bellingham wa", "Blaine Washington", "114 H Street Road, Lynden Washington"]
+    # destinations
+    addresses = ["1709 F Street bellingham wa", "820 15 ave sw calgary ab"]
+    
+    # max hours driving per day
+    max_drive_per_day_hrs = 7
+
+    # driving directions
     directions = search(addresses)
+    if write_results:
+        with open("dd_test.json", "w+") as f:
+            json.dump(directions, f)
 
-    with open("dd_test.json", "w+") as f:
-        json.dump(directions, f)
+    # driving steps extracted from driving directions
+    driving_steps = get_driving_steps(directions)
+    if write_results:
+        with open("steps_test.json", "w+") as f:
+            json.dump(driving_steps, f)
 
-    steps = get_driving_steps(directions)
+    # driving days calculated from driving steps
+    driving_days = get_driving_days(driving_steps, max_drive_per_day_hrs)
+    if write_results:
+        with open("steps_test.json", "w+") as f:
+            json.dump(driving_days, f)
 
-    with open("steps_test.json", "w+") as f:
-        json.dump(steps, f)
+    print(driving_days)
