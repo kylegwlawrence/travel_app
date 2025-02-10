@@ -2,7 +2,7 @@ import requests
 import os
 import json
 
-def search_driving_directions(coordinates:list) -> dict:
+def driving_directions(coordinates:list) -> dict:
     """
     Pass in a list of a list of coordinates and return the directions as a geojson formatted dict.
     If only list of coordinates are passed - one start and one end - then one segment of directions is returned. If more than 2 sets of coordinates are provided then there are multiple segments of directions returned. 
@@ -41,172 +41,87 @@ def search_driving_directions(coordinates:list) -> dict:
 
     return call.json()
 
-def get_driving_steps(response:dict) -> list:
+def end_of_day_step(segment:dict, max_driving_hours_per_day:float):
     """
-    Extract the driving steps and obtain their lat long coordinates from the driving directions API response
-
+    Operates on one segment of directions. 
+    Determines which step in the directions is the last one before the maximum driving time has been reached.
+    
     Params:
-    response (dict): driving directions from API response. See search_driving_directions function for more.
-
-    Returns:
-    list of dicts of driving steps
+    segment (dict): information for a driving directions step
+    max_driving_hours_per_day (float): length of time allowed to drive between sleep stops
     """
+    step_number = 0
+    time_elapsed_sec = 0
+    driving_limit_sec = max_driving_hours_per_day*60*60
 
-    # extract trip summary data
-    trip_summary = response["features"][0]["properties"]["summary"]
+ 
+    # iterate over the steps
+    for step in segment["steps"]:
+        step_number+=1
 
-    # extract segment data
-    segments = response["features"][0]["properties"]["segments"]
+        # add duration to elapsed time
+        time_elapsed_sec+=step["duration"]
 
-    # extract list of geometry coords that define the route as a LineString
-    geo_cords = response["features"][0]["geometry"]["coordinates"]
+        # check if time elapsed has passed the daily limit
+        if time_elapsed_sec>driving_limit_sec:
 
-    # init counter to hold the segment number
-    segment_number = 0
-
-    # init list to hold dicts of step data
-    driving_steps = []
-
-    # init vars to hold the running total for the trip duraitona nd distance
-    running_trip_duration_sec = 0
-    running_trip_distance_m = 0
-
-    # get the steps for each segment
-    for segment in segments:
-
-        # start on segment 1
-        segment_number+=1
-
-        # init counter to hold the step number
-        step_number = 0
-
-        # extract steps data only
-        steps = segment["steps"]
-
-        # extract segment summary data
-        total_segment_duration_sec = segment["duration"]
-        total_segment_distance_m = segment["distance"]
-
-        # init vars to hold the segment running total of the duration and distance
-        running_segment_duration_sec = 0
-        running_segment_distance_m = 0
-
-        # iterate over the steps within the segment
-        for step in steps:
-            step_number+=1
-
-            # get the lat and longs for each waypoint within the steps
-            way_points = step["way_points"]
-            first_way_point_coord = geo_cords[way_points[0]]
-            last_way_point_coord = geo_cords[way_points[1]]
-
-            # take the original dict for each step and add the way points coordinates
-            step_dict_data = step
-            step_dict_data["way_points"][0] = {step["way_points"][0]:first_way_point_coord}
-            step_dict_data["way_points"][1] = {step["way_points"][1]:last_way_point_coord}
-
-            # add segment numbers and step numbers
-            step_dict_data["segment_number"] = segment_number
-            step_dict_data["step_number"] = step_number
-
-            # add total segment duration and distance
-            step_dict_data["segment_duration_sec"] = total_segment_duration_sec
-            step_dict_data["segment_distance_m"] = total_segment_distance_m
-
-            # add running total segment duration and distance for each step
-            running_segment_duration_sec += step["duration"]
-            running_segment_distance_m += step["distance"]
-            step["running_segment_duration_sec"] = running_segment_duration_sec
-            step["running_segment_distance_m"] = running_segment_distance_m
-
-            # add total trip duration and distance
-            step["trip_duration_sec"] = trip_summary["duration"]
-            step["trip_distance_m"] = trip_summary["distance"]
-
-            # add runnign total trip duration and distance for each step
-            # if this is segment 1, take the same running total as the segment running total
-            # if this is not the first segment, take the total(s) from the previous segments and add to it the runnig total for the current segment
-            # how to store previous segments: get number of segments, use loop to iterate over segments while checking the segment_number every step. if the segment_number changes, then freeze previous segment running total and start a new one. store this in a dict
-            running_trip_duration_sec += step["duration"]
-            running_trip_distance_m += step["distance"]
-            step["running_trip_duration_sec"] = running_trip_duration_sec
-            step["running_trip_distance_m"] = running_trip_distance_m
-
-            # store dict in a list
-            driving_steps.append(step_dict_data)
-
-    return driving_steps
-
-def get_driving_days(driving_steps:list, max_drive_per_day_hrs:float) -> dict:
-    """
-    Determines how many days are required for the roadtrip based on the max hours per day the driver will be behind the wheel
-
-    Params:
-    driving_steps (list  of dicts): returned from get_driving_steps function
-    max_drive_per_day_hrs (float): max length of time driver will be behind the wheel between sleeping
-
-    Returns:
-    dict of day endpoints with location data
-    """
-
-    # convert hours to seconds
-    max_drive_per_day_sec = max_drive_per_day_hrs*60*60
-
-    # find the steps which will define the end of a day
-
-    # if the total segment duration is less than the daily driving time, then the end of the day is defined as the segment destination.
-
-    # need to save last step's delta (to max driving time) and this step's delta in order to retireve last step's delta when the current step delta is out of the driving duration bound
-    eod_found = False 
-    for step in driving_steps:
-        # special case for the first segment
-        if step["segment_number"]==1:
-            while eod_found==False:
-        
-                # define the end of day: get previous step by referencing step number
-                if step["running_segment_duration_sec"] >= max_drive_per_day_sec:
-                    eod_step_number = step["step_number"]-1
-
-                    eod_step = [step for step in driving_steps if step["step_number"] == eod_step_number]
-
-                    eod_found = True
-
-                    print(f"""### Step number {step["step_number"]} is an EOD candidate ###\nRunning segment duration: {step["running_segment_duration_sec"]} sec\nMax driving per day:{max_drive_per_day_sec} sec""")
-
-                    print(f"""### Next step number {step["step_number"]} is an EOD candidate ###\nRunning segment duration: {step["running_segment_duration_sec"]} sec\nMax driving per day:{max_drive_per_day_sec} sec""")
-                # dont do anything (yet) if the step is before the end of the max driving duration
-                else:
-                    continue
-
-                
-
-        elif step["segment_number"]>1:
-            print(f"""### Skipping segment {step["segment_number"]} ###""")
-            break
-                
-           
-    return eod_step
-
-                
-
-        # use while loop - while total running duration (for all segments) is less than total trip duration
-            # iterate over the driving steps and get the running total for duration
-
-                # find the first step that has running total duration > max driving hours per day
-
-                # take the step from above and find the step before it
-
-                # store day number with the step information
-
-                # check total running duration against the while loop
-
-            # now start iterating over the steps again starting from the day 1 endpoint and get running total duration
+            # return the previous step
+            previous_step = segment["steps"][step_number-1]
+            previous_step["elapsed_time_sec"] = time_elapsed_sec-step["duration"]
+            previous_step["duration_until_limit_sec"] = driving_limit_sec - previous_step["elapsed_time_sec"]
             
-                # find the first step that has running total duration > max driving hours per day
+            break
 
-                # take the step from above and find the step before it
+    return previous_step
 
-                # store day number with the step information
+def full_directions(coordinates:list, max_drive_per_day_hrs:float) -> list:
+    """
+    Generates full directions to include sleep locations and rest stops.
+
+    Params:
+    driving_steps (list of dicts): returned from function get_driving_steps()
+
+    Returns:
+    updated directions in a list of dicts
+    """
+
+    # get initial driving directions
+    initial_directions = driving_directions(coordinates)
+    print(initial_directions)
+
+    # extract steps from the directions dictionary
+    initial_driving_steps = driving_directions(initial_directions)
+
+    # init vars
+    reached_end_trip = False
+    sleep_stop = None
+    update_directions = False
+
+    for step in initial_driving_steps:
+
+        while update_directions == False:
+
+            # find the first step in the segment that passes the max driving duration per day
+            if step["segment_number"]==1 and step["running_segment_duration_sec"]>max_drive_per_day_hrs*60*60:
+                    
+                # take the previous step
+                previous_step_number = step["step_number"]-1
+
+                # end of previous step is the sleeping location
+                sleep_spot_coords = initial_driving_steps[previous_step_number-1]["way_points"][1].values()
+
+                # assemble the list of updated coordinates so that the sleep spot replaces the starting point of the last day
+                for coord in coordinates[1:]:
+                    updated_coords.append(coord)
+
+                update_directions = True 
+
+            # if we don't finda step that is further than the max driving duration, then the sleep spot is the end of this segment
+            elif step["segment_number"]==1 and step["number"]==initial_driving_steps[-1]["step_number"]:
+
+                # now remove the first set of coordinates from original coordinates
+                sleep_spot_coords = step["way_points"][1].values()
+
 
 def parse_info(addresses:list, response:dict) -> list:
     """

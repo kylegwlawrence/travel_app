@@ -1,5 +1,5 @@
 from api_calls.geocoder.search import geocode_address
-from api_calls.openroute_service.directions import search_driving_directions, get_driving_steps, get_driving_days
+from api_calls.openroute_service.directions import end_of_day_step, search_driving_directions, get_driving_steps, get_driving_days, full_directions
 import json
 
 def search(addresses:list) -> list:
@@ -25,10 +25,25 @@ def search(addresses:list) -> list:
 
     # search for driving directions
     driving_directions = search_driving_directions(geocoded_addresses)
+    #driving_directions = full_directions(geocoded_addresses)
 
     return driving_directions
 
 if __name__=="__main__":
+    # destinations
+    addresses = ["1709 F Street bellingham wa", "820 15 ave sw calgary ab"]
+    max_driving_hours_per_day=7
+
+    d = search(addresses)
+
+    for segment in d["features"][0]["properties"]["segments"]:
+        eod_step = end_of_day_step(segment, max_driving_hours_per_day)
+
+        print(eod_step)
+
+
+
+if __name__=="__main_":
 
     # write results to disk for debugging
     write_results = True
