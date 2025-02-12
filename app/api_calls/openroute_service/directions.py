@@ -2,6 +2,39 @@ import requests
 import os
 import json
 
+def reverse_coordinates(coordinates:list) -> list:
+    """
+    Operates on one set of coordinates stored as floats in a list
+    The coordinates from opernrouteservice are formatted long, lat instead of conventional lat long. 
+    Reverse them for easier debugging/interacting.
+
+    Params:
+    coordinates (list): list of coordinates to reverse
+
+    Return:
+    list of coordinates in reverse order
+    """
+
+    # check if all elements are of the same type
+    b = len(set(type(x) for x in coordinates)) == 1
+
+    if b:
+        # remove the one-level nested list
+        if type(coordinates[0]) is list:
+            # enforce list length of 2 for coordinates
+            if len(coordinates[0])!=2:
+                raise ValueError(f"Need two coordinates, you passed:\n{coordinates[0]}")
+            else:
+                coordinates = coordinates[0]
+        else:
+            # enforce list length of 2 for coordinates
+            if len(coordinates)!=2:
+                raise ValueError(f"Need two coordinates, you passed:\n{coordinates}")
+    else:
+        raise TypeError("Elements in coordinates list are not of the same type")
+
+    return coordinates.reverse()
+
 def driving_directions(coordinates:list) -> dict:
     """
     Pass in a list of a list of coordinates and return the directions as a geojson formatted dict.
@@ -16,32 +49,23 @@ def driving_directions(coordinates:list) -> dict:
     - dict of driving directions
     """
 
-    # reverse the individual lists of coordinates for the api input. API takes longitude, latitude instead of standard latitude, longitude. 
-    reversed_coordinates=[]   
-    for c in coordinates:
-        r = c[::-1]
-        reversed_coordinates.append(r)
+    # format as long, lat for the API
+    body = {"coordinates":reverse_coordinates(coordinates)}
 
-    # pass in at least 2 sets of coordinates
-    body = {"coordinates":reversed_coordinates}
-
-    # define headers for api request
     headers = {
         'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
         'Authorization': os.environ["OPENROUTE_KEY"],
         'Content-Type': 'application/json; charset=utf-8'
     }
 
-    # call api and log status to console
     call = requests.post('https://api.openrouteservice.org/v2/directions/driving-car/geojson', json=body, headers=headers)
 
-    # log to console if we get a non-200 response
     if call.status_code!=200:
         print(call.json())
 
     return call.json()
 
-def end_of_day_step(segment:dict, max_driving_hours_per_day:float):
+def end_of_day_step(segment:dict, max_driving_hours_per_day:float) -> dict:
     """
     Operates on one segment of directions. 
     Determines which step in the directions is the last one before the maximum driving time has been reached.
@@ -50,124 +74,163 @@ def end_of_day_step(segment:dict, max_driving_hours_per_day:float):
     segment (dict): information for a driving directions step
     max_driving_hours_per_day (float): length of time allowed to drive between sleep stops
     """
+
+    # init some counters
     step_number = 0
     time_elapsed_sec = 0
+
+    # convert hours to seconds
     driving_limit_sec = max_driving_hours_per_day*60*60
 
- 
-    # iterate over the steps
     for step in segment["steps"]:
         step_number+=1
-
-        # add duration to elapsed time
-        time_elapsed_sec+=step["duration"]
-
-        # check if time elapsed has passed the daily limit
-        if time_elapsed_sec>driving_limit_sec:
-
-            # return the previous step
-            previous_step = segment["steps"][step_number-1]
-            previous_step["elapsed_time_sec"] = time_elapsed_sec-step["duration"]
-            previous_step["duration_until_limit_sec"] = driving_limit_sec - previous_step["elapsed_time_sec"]
-            
+        time_elapsed_sec += step["duration"]
+        if time_elapsed_sec > driving_limit_sec: # the steps are in chronological order hence why we can iterate over them sequentially to get the eod step
+            # get the previous step
+            s = segment["steps"][step_number-1]
+            # get elapsed time for previous step
+            s["elapsed_time_sec"] = time_elapsed_sec-step["duration"]
+            # from the previous step, get driving duration to the location matching our max daily driving duration
+            s["duration_until_limit_sec"] = driving_limit_sec - s["elapsed_time_sec"]
             break
+        else:
+            # current step is end of segment
+            print(f"""EOD is end of a segment""")
+            s = step
 
-    return previous_step
+    return s
 
-def full_directions(coordinates:list, max_drive_per_day_hrs:float) -> list:
+def coordinates_from_waypoints(step: dict, route_geometry: list) -> list:
     """
-    Generates full directions to include sleep locations and rest stops.
+    Get the start and end coordinates for a single driving step
 
     Params:
-    driving_steps (list of dicts): returned from function get_driving_steps()
+    driving_step (dict): single step
+    route_geometry (list): list of coordinates defining the LineString
 
     Returns:
-    updated directions in a list of dicts
+    list of two coordinate lists that locate the start and end of the driving step formatted as lat, long
     """
 
-    # get initial driving directions
+    # get coordinates, reindex to 0-based
+    start_way_point = step["way_points"][0]-1
+    end_way_point = step["way_points"][1]-1
+
+    # use way point as index
+    start_coords = route_geometry["coordinates"][start_way_point]
+    end_coords = route_geometry["coordinates"][end_way_point]
+
+    start_coords = reverse_coordinates(start_coords)
+    end_coords = reverse_coordinates(end_coords)
+
+    return [start_coords, end_coords]
+
+def reached_end_trip(step:dict, directions:list) -> bool:
+    """
+    Determines if a driving step is the last one of the entire trip
+
+    Params:
+
+    Returns:
+
+    """
+    
+    geometry = directions["features"][0]["geometry"]
+    final_step = directions["features"][0]["properties"]["segments"][-1]["steps"][-1]
+
+    step_coords = coordinates_from_waypoints(step, geometry)
+    final_step_coords = coordinates_from_waypoints(final_step, geometry)
+
+    if step_coords == final_step_coords:
+        end_of_trip_reached = True
+    else: 
+        end_of_trip_reached = False
+
+    return end_of_trip_reached
+
+def reached_end_first_segment(step:dict, directions:list):
+    """
+    Determines if a driving step is the last one of the FIRST segment of driving directions
+
+    Params:
+
+    Returns:
+
+    """
+
+    geometry = directions["features"][0]["geometry"]
+    final_step = directions["features"][0]["properties"]["segments"][0]["steps"][-1]
+
+    step_coords = coordinates_from_waypoints(step, geometry)
+    final_step_coords = coordinates_from_waypoints(final_step, geometry)
+
+    if step_coords == final_step_coords:
+        end_of_segment_reached = True
+    else: 
+        end_of_segment_reached = False
+
+    return end_of_segment_reached
+
+def full_directions(coordinates:list, max_driving_hours_per_day:float) -> list:
+    """
+    Generates a list of coordinates for all of the stopping locations including original destinations
+
+    Params:
+    coordinates (list): list of list of coordinates defining route destinations formatted as lat long
+    max_driving_hours_per_day (float): max allowable daily driving time, in hours (decimals accepted)
+
+    Returns:
+    Updated coordinates for all stops in a list
+    """
+
     initial_directions = driving_directions(coordinates)
-    print(initial_directions)
 
-    # extract steps from the directions dictionary
-    initial_driving_steps = driving_directions(initial_directions)
+    # need to keep inital directions throught the loop
+    updated_direction_coords = coordinates.copy()
 
-    # init vars
-    reached_end_trip = False
-    sleep_stop = None
-    update_directions = False
+    # init some stuff
+    updated_route = []
+    counter = 0
+    end_of_trip_reached = False
+    first_segment = directions["features"][0]["properties"]["segments"][0]
+    
+    # iterate over updated directions until the end of the trip has been reached
+    while end_of_trip_reached == False:
+        if counter == 0:
+            #use initial directions only int he first loop
+            directions = initial_directions
+        else:
+            # use updated directions for all subsequent loops
+            directions = updated_directions.copy()
+        counter+=1
+        
+        # determine end of day stop for the first segment
+        first_eod = end_of_day_step(first_segment, max_driving_hours_per_day)
 
-    for step in initial_driving_steps:
+        # get coordinates for the first eod
+        first_eod_waypoint_end = first_eod["way_points"][1]-1
+        first_eod_coords_end = directions["features"][0]["geometry"]["coordinates"][first_eod_waypoint_end]
 
-        while update_directions == False:
+        # reverse the coordinate order to conventional order
+        first_eod_coords_reversed = reverse_coordinates([first_eod_coords_end])
 
-            # find the first step in the segment that passes the max driving duration per day
-            if step["segment_number"]==1 and step["running_segment_duration_sec"]>max_drive_per_day_hrs*60*60:
-                    
-                # take the previous step
-                previous_step_number = step["step_number"]-1
+        # store the locations (coords) in a list
+        updated_route.append(first_eod_coords_reversed)
 
-                # end of previous step is the sleeping location
-                sleep_spot_coords = initial_driving_steps[previous_step_number-1]["way_points"][1].values()
+        # determine if we have reached a destination (ie segment end) or the end of te trip
+        end_of_trip_reached = reached_end_trip(first_eod, directions)
+        end_of_first_segment_reached = reached_end_first_segment(first_eod, directions)
 
-                # assemble the list of updated coordinates so that the sleep spot replaces the starting point of the last day
-                for coord in coordinates[1:]:
-                    updated_coords.append(coord)
+        if end_of_trip_reached == False and end_of_first_segment_reached == False:
+            # delete first starting point and replace with eod location
+            del updated_direction_coords[0]
+            updated_direction_coords = [first_eod_coords_end]+updated_direction_coords
+            updated_directions = driving_directions(updated_direction_coords)
+        elif end_of_trip_reached == False and end_of_first_segment_reached:
+            # delete first starting point so we can update directions starting at segment end
+            del updated_direction_coords[0]
+            updated_directions = driving_directions(updated_direction_coords)
+        elif end_of_trip_reached:
+            print("End of trip")
 
-                update_directions = True 
-
-            # if we don't finda step that is further than the max driving duration, then the sleep spot is the end of this segment
-            elif step["segment_number"]==1 and step["number"]==initial_driving_steps[-1]["step_number"]:
-
-                # now remove the first set of coordinates from original coordinates
-                sleep_spot_coords = step["way_points"][1].values()
-
-
-def parse_info(addresses:list, response:dict) -> list:
-    """
-    Takes the response from the driving directions api and parses out key information.
-
-    Params:
-    addresses (list): list of addresses defining each segment sequentially
-    response (dict): the response dictionary from the api call
-
-    Returns:
-    - list of dicts of key information for driving:
-        - segment number
-        - distance in metres
-        - duration in seconds
-        - start and end addresses
-    """
-
-    # init vars
-    important_info = []
-    segment_number = 1
-
-    # access the segments info
-    for segment in response["features"][0]["properties"]["segments"]:
-
-        # grab the important segment info
-        distance = segment["distance"]
-        duration = segment["duration"]
-
-        # start and endpoints per segment
-        start_address = addresses[segment_number-1]
-        end_address = addresses[segment_number]
-
-        # add each segment info to list
-        d = {
-            "segment_number":segment_number
-            , "distance":distance
-            , "duration":duration
-            , "start_address":start_address
-            , "end_address":end_address}
-        important_info.append(d)
-
-        # move to next segment
-        segment_number+=1
-
-    return important_info
-
-
-if __name__=="__main__":
-    dd = get_driving_days()
+    return updated_route

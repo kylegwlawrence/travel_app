@@ -1,5 +1,5 @@
 from api_calls.geocoder.search import geocode_address
-from api_calls.openroute_service.directions import end_of_day_step, search_driving_directions, get_driving_steps, get_driving_days, full_directions
+from api_calls.openroute_service.directions import end_of_day_step, driving_directions, full_directions, reverse_coordinates
 import json
 
 def search(addresses:list) -> list:
@@ -24,24 +24,39 @@ def search(addresses:list) -> list:
         geocoded_addresses.append([lat, long])
 
     # search for driving directions
-    driving_directions = search_driving_directions(geocoded_addresses)
+    d = driving_directions(geocoded_addresses)
     #driving_directions = full_directions(geocoded_addresses)
 
-    return driving_directions
+    return d
+
+if __name__=="__main_":
+
+    addresses = ["1709 F Street bellingham wa", "820 15 ave sw calgary ab"]
+
+    # geocode the addresses and store in list
+    geocoded_addresses = []
+    for address in addresses:
+        lat, long = geocode_address(address)
+        geocoded_addresses.append([lat, long])
+
+    c = reverse_coordinates(geocoded_addresses)
+    print(geocoded_addresses)
+    print(c)
 
 if __name__=="__main__":
-    # destinations
+
     addresses = ["1709 F Street bellingham wa", "820 15 ave sw calgary ab"]
     max_driving_hours_per_day=7
 
-    d = search(addresses)
+    # geocode the addresses and store in list
+    geocoded_addresses = []
+    for address in addresses:
+        lat, long = geocode_address(address)
+        geocoded_addresses.append([lat, long])
 
-    for segment in d["features"][0]["properties"]["segments"]:
-        eod_step = end_of_day_step(segment, max_driving_hours_per_day)
+    d = full_directions(geocoded_addresses, max_driving_hours_per_day)
 
-        print(eod_step)
-
-
+    print(d)
 
 if __name__=="__main_":
 
