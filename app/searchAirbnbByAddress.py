@@ -1,12 +1,11 @@
-from app.api_calls.geocoder.search import geocode_address
 from api_calls.airbnb.search import search_near_lat_long, search_details, search_availability, get_calendar
 
-def search(address:str, checkIn:str, checkOut:str, range:int=500) -> list:
+def search(coordinates:tuple, checkIn:str, checkOut:str, range:int=500) -> list:
     """
     Searches for airbnbs and returns the listing details for each airbnb as a list of dictionaries
 
     Params:
-    address (str): free form address for the search centroid
+    coordinates (tuple): center of search area as (lat, long)
     checkIn (str): desired check in date
     checkOut (str): desired check out date
     range (int): the search radius in metres
@@ -17,11 +16,8 @@ def search(address:str, checkIn:str, checkOut:str, range:int=500) -> list:
     - passes by this function if there are no airbnbs found within the range of the address
     """
 
-    # get the geo coordinates for the address
-    lat, lon = geocode_address(address)
-
     # find airbnbs near the set of coordinates
-    ids_near_address = search_near_lat_long(str(lat), str(lon), range=str(range))
+    ids_near_address = search_near_lat_long(str(coordinates[0]), str(coordinates[1]), range=str(range))
 
     # hold airbnb listing details
     list_of_airbnbs = []

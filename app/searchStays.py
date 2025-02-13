@@ -1,12 +1,18 @@
 from searchAirbnbByAddress import search as searchAirbnb
 from searchPricelineByAddress import search as searchPriceline
+from api_calls.geocoder.search import geocode_address
+from api_calls.openroute_service.isochrone import request_isochrone, is_in_isochrone
+from api_calls.openroute_service.directions import driving_directions
 import pandas as pd
 
-def search_all_stays(address:str, checkIn:str, checkOut:str, range:int=500, limit:int=10, page:int=1) -> pd.DataFrame:
+def search_all_stays(coordinates:tuple, checkIn:str, checkOut:str, range:int=500, limit:int=10, page:int=1) -> pd.DataFrame:
     """
     Takes all accommodation apis and searches across all of them with one function.
 
     Params:
+    coordinates (tuple): center of search area as (lat, long)
+    checkIn (str): desired check in date
+    checkOut (str): desired check out date
     range (int): metres from searched address, applies only to airbnbs.
     limit (int): number of results returned per page, applies only to priceline hotels.
     page (int): 1-base indexed page of results, applies only to priceline hotels.
@@ -16,8 +22,8 @@ def search_all_stays(address:str, checkIn:str, checkOut:str, range:int=500, limi
     """
 
     # search all accommodation sources
-    airbnbs = searchAirbnb(address, checkIn, checkOut, range)
-    hotels = searchPriceline(address, checkIn, checkOut, limit, page)
+    airbnbs = searchAirbnb(coordinates, checkIn, checkOut, range)
+    hotels = searchPriceline(coordinates, checkIn, checkOut, limit, page)
 
     # convert to dataframes
     df_airbnbs = pd.DataFrame(airbnbs)
@@ -85,6 +91,33 @@ def search_all_stays(address:str, checkIn:str, checkOut:str, range:int=500, limi
     
     return df
 
+def get_best_stay(df, centroid: tuple) -> dict:
+    """
+    Determine what accommodation is closest to the isochrone center
+    """
+    best_stay = None
+    best_proximity = None
+
+    for index, row in df.iterrows():
+        coords = (row["lat"], row["long"])
+        # proximity to centroid
+        format_coords = [[coords[1], coords[0]], [centroid[1], centroid[0]]]
+        d = driving_directions(format_coords)
+        proximity = d["features"][0]["properties"]["summary"]["duration"]
+        if best_stay is None or proximity < best_proximity:
+            best_proximity = proximity
+            best_stay = df.iloc[index]
+
+    return best_stay
+
 if __name__=='__main__':
-    df = search_all_stays("820 15 ave SW calgary ab", "2025-05-11", "2025-05-14", range=500, limit=10, page=1)
-    df.to_csv("output/stays.csv", index=False)
+    coords = geocode_address("820 15 ave SW calgary ab")
+
+    #df = search_all_stays(coords, "2025-05-11", "2025-05-14", range=500, limit=10, page=1)
+    
+    df = pd.read_csv("stays.csv")
+
+    best_stay = get_best_stay(df, coords)
+    print(best_stay.to_dict())
+
+    #df.to_csv("stays.csv", index=False)
