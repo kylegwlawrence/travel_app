@@ -1,5 +1,7 @@
 from api_calls.geocoder.search import geocode_address
-from api_calls.openroute_service.directions import end_of_day_step, driving_directions, full_directions, reverse_coordinates
+
+
+from api_calls.openroute_service.directions import reached_end_first_segment, reached_end_trip, coordinates_from_waypoints, get_end_of_day_step, driving_directions, full_directions, reverse_coordinates
 import json
 
 def search(addresses:list) -> list:
@@ -21,7 +23,7 @@ def search(addresses:list) -> list:
     geocoded_addresses = []
     for address in addresses:
         lat, long = geocode_address(address)
-        geocoded_addresses.append([lat, long])
+        geocoded_addresses.append([long, lat])
 
     # search for driving directions
     d = driving_directions(geocoded_addresses)
@@ -29,62 +31,85 @@ def search(addresses:list) -> list:
 
     return d
 
-if __name__=="__main_":
 
-    addresses = ["1709 F Street bellingham wa", "820 15 ave sw calgary ab"]
+def get_full_route_coordinates(addresses:list, max_driving_hours_per_day:float) -> list:
+    """
+    Generates a list of coordinates for all of the stopping locations including original destinations
 
-    # geocode the addresses and store in list
+    Params:
+    coordinates (list): list of list of coordinates defining route destinations formatted as lat long
+    max_driving_hours_per_day (float): max allowable daily driving time, in hours (decimals accepted)
+
+    Returns:
+    Updated coordinates for all stops in a list
+    """
+
+    # geocode addresses
     geocoded_addresses = []
     for address in addresses:
         lat, long = geocode_address(address)
-        geocoded_addresses.append([lat, long])
+        # format long, lat for API
+        geocoded_addresses.append([long, lat])
 
-    c = reverse_coordinates(geocoded_addresses)
-    print(geocoded_addresses)
-    print(c)
+    # test geocoding result
+    print(f"\nAddresses {addresses} geocoded: {geocoded_addresses}")
+
+    # use coordinates to get driving directions from the openrouteservice API
+    initial_directions = driving_directions(geocoded_addresses)
+
+    ##########################################
+    ### OPERATING ON AN INDIVIDUAL SEGMENT ###
+    ##########################################
+
+    directions = initial_directions.copy()
+    complete_route_coords = []
+
+    for segment in directions["features"][0]["properties"]["segments"]:
+
+        # get the first segment
+        first_segment = segment[0]
+        print(f"\nFirst segment: {first_segment}\n")
+
+        # get the end of the first day for the first segment
+        step = get_end_of_day_step(first_segment, max_driving_hours_per_day)
+        print(f"\nLast step of the first day: {step}\n")
+
+        # get the coords for the end of the first day
+        route_geometry = initial_directions["features"][0]["geometry"]
+        coords = coordinates_from_waypoints(step, route_geometry)
+
+        print(f"Location at end of first day: {coords[1]}")
+
+        # have we reached the end of the trip at the end of the first day?
+        is_end_trip = reached_end_trip(step, initial_directions)
+        print(f"\nAre we at the end of the trip? {is_end_trip}\n")
+
+        # have we reached the end of the first segment?
+        is_end_segment = reached_end_first_segment(step, initial_directions)
+        print(f"\nAre we at the end of the first segment? {is_end_segment}\n")
+
+        # if we have reached the end of the trip, then we have our full directions now
+        if is_end_trip:
+            print(f"\nTrip takes less than one full day of driving.\nUse initial directions as full directions.\nFull directions complete ending at {coords}")
+
+        # if we have reached the end of the segment, but not the end of the trip, 
+        # then we have full directions for one segment. we move to the next
+        # segment
+        elif is_end_segment and not is_end_trip:
+            print(f"Reached end of segment at {coords} but not end of trip.")
+
+            # just use the segment start and end - no need to update directions (when a hotel is chosen, the directions are updated from the hotel)
+
+        # if we haven't reached the end of a trip or a segment, then we have only
+        # reached the end of the driving day and we must find a hotel then get updated directions for the rest of the route from there
+        else:
+            print(f"Reached end of day at {coords} with a remainder of the segment to complete the next day.")
 
 if __name__=="__main__":
 
     addresses = ["1709 F Street bellingham wa", "820 15 ave sw calgary ab"]
-    max_driving_hours_per_day=7
+    max_driving_hours_per_day = 7
 
-    # geocode the addresses and store in list
-    geocoded_addresses = []
-    for address in addresses:
-        lat, long = geocode_address(address)
-        geocoded_addresses.append([lat, long])
-
-    d = full_directions(geocoded_addresses, max_driving_hours_per_day)
+    d = get_full_route_coordinates(addresses, max_driving_hours_per_day)
 
     print(d)
-
-if __name__=="__main_":
-
-    # write results to disk for debugging
-    write_results = True
-    
-    # destinations
-    addresses = ["1709 F Street bellingham wa", "820 15 ave sw calgary ab"]
-    
-    # max hours driving per day
-    max_drive_per_day_hrs = 7
-
-    # driving directions
-    directions = search(addresses)
-    if write_results:
-        with open("dd_test.json", "w+") as f:
-            json.dump(directions, f)
-
-    # driving steps extracted from driving directions
-    driving_steps = get_driving_steps(directions)
-    if write_results:
-        with open("steps_test.json", "w+") as f:
-            json.dump(driving_steps, f)
-
-    # driving days calculated from driving steps
-    driving_days = get_driving_days(driving_steps, max_drive_per_day_hrs)
-    if write_results:
-        with open("steps_test.json", "w+") as f:
-            json.dump(driving_days, f)
-
-    print(driving_days)

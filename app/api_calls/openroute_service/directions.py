@@ -43,25 +43,21 @@ def driving_directions(coordinates:list) -> dict:
     Pass in a list of a list of coordinates and return the directions as a geojson formatted dict.
     If only list of coordinates are passed - one start and one end - then one segment of directions is returned. If more than 2 sets of coordinates are provided then there are multiple segments of directions returned. 
 
-    An example: coordinates=[[49.41461,8.681495], [49.41943,8.686507], [49.420318, 8.687872]]. This will give directions between the first two lists of coordinates as segment one and then directions between the last two coordinates as segment two. 
+    An example: coordinates=[[8.681495, 49.41461], [8.686507, 49.41943], [8.687872, 49.420318]]. This will give directions between the first two lists of coordinates as segment one and then directions between the last two coordinates as segment two. 
 
     Params:
-    coordinates (list of lists of floats): a list of a list of cartesian coordinates that define start and end points for each segment. Must be format [latitude, longitude].
+    coordinates (list of lists of floats): a list of a list of cartesian coordinates that define start and end points for each segment. 
+    Must be format [longitude, latitude] as this is the format the API requires
 
     Returns: 
-    - dict of driving directions
+    - list of coordinates to define segments
     """
 
     print(f"Running driving_directions for {coordinates}....")
 
-    # format coordinates for the API call (long, lat instead of conventional lat, long)
-    formatted_coordinates = []
-    for c in coordinates:
-        r = [c[1], c[0]]
-        formatted_coordinates.append(r)
 
     # format as long, lat for the API
-    body = {"coordinates":formatted_coordinates}
+    body = {"coordinates":coordinates}
 
     headers = {
         'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
@@ -76,7 +72,7 @@ def driving_directions(coordinates:list) -> dict:
 
     return call.json()
 
-def end_of_day_step(segment:dict, max_driving_hours_per_day:float) -> dict:
+def get_end_of_day_step(segment:dict, max_driving_hours_per_day:float) -> dict:
     """
     Operates on one segment of directions. 
     Determines which step in the directions is the last one before the maximum driving time has been reached.
@@ -95,23 +91,28 @@ def end_of_day_step(segment:dict, max_driving_hours_per_day:float) -> dict:
     # convert hours to seconds
     driving_limit_sec = max_driving_hours_per_day*60*60
 
+    # the steps are in chronological order hence why we can iterate over them sequentially to get the eod step
     for step in segment["steps"]:
+
         step_number+=1
         time_elapsed_sec += step["duration"]
-        if time_elapsed_sec > driving_limit_sec: # the steps are in chronological order hence why we can iterate over them sequentially to get the eod step
-            # get the previous step
-            s = segment["steps"][step_number-1]
-            # get elapsed time for previous step
-            s["elapsed_time_sec"] = time_elapsed_sec-step["duration"]
-            # from the previous step, get driving duration to the location matching our max daily driving duration
-            s["duration_until_limit_sec"] = driving_limit_sec - s["elapsed_time_sec"]
 
-            # current step is end of segment
-            print(f"""EOD is end of a segment""")
+        # if we have just passed the driving limit with this step, use the previous step as the end of day step
+        if time_elapsed_sec > driving_limit_sec: 
+
+            # get the previous step
+            prev_step = segment["steps"][step_number-1]
+            prev_step["elapsed_time_sec"] = time_elapsed_sec-step["duration"]
+
+            # driving duration remaining between the previous step and the daily limit
+            prev_step["duration_until_daily_limit_sec"] = driving_limit_sec - prev_step["elapsed_time_sec"]
+
+            s = prev_step
 
             break
+
+        # if we are not yet beyond our driving limit in this segment, but we have reached the last step in the segment, then the current step is the end of day step
         else:
-            
             s = step
 
     return s
@@ -125,7 +126,7 @@ def coordinates_from_waypoints(step: dict, route_geometry: list) -> list:
     route_geometry (list): list of coordinates defining the LineString
 
     Returns:
-    list of two coordinate lists that locate the start and end of the driving step formatted as lat, long
+    list of two coordinate lists that locate the start and end of the driving step formatted as long, lat
     """
 
     print("Running coordinates_from_waypoints....")
@@ -137,9 +138,6 @@ def coordinates_from_waypoints(step: dict, route_geometry: list) -> list:
     # use way point as index
     start_coords = route_geometry["coordinates"][start_way_point]
     end_coords = route_geometry["coordinates"][end_way_point]
-
-    start_coords = reverse_coordinates(start_coords)
-    end_coords = reverse_coordinates(end_coords)
 
     return [start_coords, end_coords]
 
