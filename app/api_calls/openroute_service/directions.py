@@ -141,7 +141,7 @@ def coordinates_from_waypoints(step: dict, route_geometry: list) -> list:
 
     return [start_coords, end_coords]
 
-def reached_end_trip(step:dict, directions:list) -> bool:
+def reached_end_trip(step:dict, directions:list, final_step: dict) -> bool:
     """
     Determines if a driving step is the last one of the entire trip
 

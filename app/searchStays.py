@@ -93,22 +93,28 @@ def search_all_stays(coordinates:tuple, checkIn:str, checkOut:str, range:int=500
 
 def get_best_stay(df, centroid: tuple) -> dict:
     """
-    Determine what accommodation is closest to the isochrone center
+    Determine what accommodation is closest to the center of the search area
+
+    Params:
+    - df (pd.DataFrame): combined data for all accommodation providers including the location's coordinates
+    - centroid (tuple): center of the search area as lat, long
+    
+    Returns:
+    - (dict) the row from the dataframe that contains the best stay
     """
     best_stay = None
     best_proximity = None
 
     for index, row in df.iterrows():
-        coords = (row["lat"], row["long"])
-        # proximity to centroid
-        format_coords = [[coords[1], coords[0]], [centroid[1], centroid[0]]]
+        format_coords = [[row["long"], row["lat"]], [centroid[1], centroid[0]]]
         d = driving_directions(format_coords)
-        proximity = d["features"][0]["properties"]["summary"]["duration"]
-        if best_stay is None or proximity < best_proximity:
-            best_proximity = proximity
+        proximity_to_centroid = d["features"][0]["properties"]["summary"]["duration"]
+
+        if best_stay is None or proximity_to_centroid < best_proximity:
+            best_proximity = proximity_to_centroid # update with the better value
             best_stay = df.iloc[index]
 
-    return best_stay
+    return best_stay.to_dict()
 
 if __name__=='__main__':
     coords = geocode_address("820 15 ave SW calgary ab")
