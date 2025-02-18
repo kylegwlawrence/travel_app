@@ -1,19 +1,21 @@
 from api_calls.openroute_service.directions import get_driving_directions, get_end_of_day_step, reached_end_first_segment, reached_end_trip, coordinates_from_waypoints
 from api_calls.geocoder.search import geocode_address
-from searchStays import get_best_stay, search_all_stays
-import pandas as pd
+from api_calls.airbnb.search import main as search_airbnb
+from api_calls.priceline.search import main as search_priceline
 import math
-from datetime import datetime, timedelta
+from typing import List
 
-def get_route(start_address, finish_address, daily_driving_limit:float, trip_start_date:str):
+def get_route(start_address, finish_address, daily_driving_limit:float, trip_start_date:str) -> List[tuple]:
     """
     Get route for the road trip including stops at hotels
+
     Params:
     - addresses (list of strings)
     - daily_driving_limit (float): max duration in hours to drive in one day
     - trip_start_date (str): MM-DD-YYYY
+
     Returns:
-    - (list): coordinates
+    - (list of tuples): coordinates
     """
 
     start = geocode_address(start_address)

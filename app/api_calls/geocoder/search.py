@@ -2,12 +2,15 @@ import requests
 from requests.structures import CaseInsensitiveDict
 import os
 import json
+from typing import List
 
 def geocode_address(address:str) -> tuple:
     """
     Gets the lat and long coordinates for a given address.
+
     Params:
-    address (str): free form address such as a street address, city name, postal code, etc.
+    - address (str): free form address such as a street address, city name, postal code, etc.
+
     Returns:
     - (tuple): the lat and long coordinates
     """
@@ -30,11 +33,20 @@ def geocode_address(address:str) -> tuple:
 
     return lat, lon
 
-def geocode_multiple_addresses(addresses:list):
-    """Coordiantes for a list of addresses"""
+def geocode_multiple_addresses(addresses:list) -> List[tuple]:
+    """
+    Coordinates for a list of addresses
+    
+    Params:
+    - addresses (list): multiple freeform addresses
+
+    Returns:
+    - (list of tuples): list of coordinates for each address
+    """
     geocoded_addresses = []
     for address in addresses:
-        geocoded_addresses.append(geocode_address(address))
+        geocoded_address= geocode_address(address)
+        geocoded_addresses.append(geocoded_address)
 
     return geocoded_addresses
 
