@@ -1,0 +1,6 @@
+{
+"x-rapidapi-host":"airbnb-listings.p.rapidapi.com",
+"endpoint_lat_long":"https://airbnb-listings.p.rapidapi.com/v2/listingsByLatLng",
+"endpoint_details":"https://airbnb-listings.p.rapidapi.com/v2/listing",
+"endpoint_availability":"https://airbnb-listings.p.rapidapi.com/v2/listingAvailabilityFull"
+}

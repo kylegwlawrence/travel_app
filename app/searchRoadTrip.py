@@ -1,8 +1,9 @@
-from api_calls.openroute_service.directions import driving_directions, get_end_of_day_step, reached_end_first_segment, reached_end_trip, coordinates_from_waypoints
+from api_calls.openroute_service.directions import get_driving_directions, get_end_of_day_step, reached_end_first_segment, reached_end_trip, coordinates_from_waypoints
 from api_calls.geocoder.search import geocode_address
-from searchStays import search_all_stays, get_best_stay
+from searchStays import get_best_stay, search_all_stays
 import pandas as pd
 import math
+from datetime import datetime, timedelta
 
 def _getSegmentDurationInfo(driving_directions:list, max_driving_duration_per_day_hrs:float=7, rest_every_n_hrs:float=3, rest_duration_hrs:float=0.33) -> dict:
     """
@@ -130,100 +131,59 @@ def _getStayCoordsPerSegment(driving_directions, max_driving_duration_per_day_hr
 
 def get_roadtrip(addresses:list, start_date:str, max_driving_hours_per_day:float, stay_source='csv') -> list:
     """
-    Generates a list of coordinates for all of the stopping locations including original destinations and overnight stays
+    Generates a list of coordinates for all of the stopping locations including original destination and overnight stays
 
     Params:
-    coordinates (list): list of list of coordinates defining route destinations formatted as lat long
-    max_driving_hours_per_day (float): max allowable daily driving time, in hours (decimals accepted)
+    - addresses (list): a list of 2 free-form addresses, one the start and one the end of the roadtrip.
+    - max_driving_hours_per_day (float): max allowable daily driving time, in hours (decimals accepted)
 
     Returns:
-    Updated coordinates for all stops in a list
+    - (list): updated coordinates for all stops
     """
 
-    # geocode addresses
     geocoded_addresses = []
     for address in addresses:
         lat, long = geocode_address(address)
-        # format long, lat for API
         geocoded_addresses.append([long, lat])
 
-    # use coordinates to get driving directions from the openrouteservice API
-    initial_directions = driving_directions(geocoded_addresses)
-
-    ##########################################
-    ### OPERATING ON AN INDIVIDUAL SEGMENT ###
-    ##########################################
-
-    directions = initial_directions.copy()
-    complete_route_coords = [geocoded_addresses[0]] # keep only starting point
-    print(complete_route_coords)
-
+    directions = get_driving_directions(geocoded_addresses)
+    final_step = directions["features"][0]["properties"]["segments"][0]["steps"][-1]
+    
     # use to update and rerun driving directions each loop
-    updated_coords = geocoded_addresses.copy()
+    updated_coords_for_next_loop = geocoded_addresses.copy()
 
+    # store generated route
+    complete_route_coords = [geocoded_addresses[0]]
 
-    # divide total trip duration by max driving time per day to get num days to complete trip
-    num_days_required = math.ceil(max_driving_hours_per_day / directions["features"][0]["properties"]["summary"]["duration"])
+    num_days_to_complete_trip = math.ceil(max_driving_hours_per_day / directions["features"][0]["properties"]["summary"]["duration"])
 
     is_end_trip = False
-    # loop over a range  of the days required
     while not is_end_trip:
 
-        # get the first segment
-        first_segment = directions["features"][0]["properties"]["segments"][0]
-        print(f"\nFirst segment: {first_segment}\n")
-
-        # get the end of the first day for the first segment
-        step = get_end_of_day_step(first_segment, max_driving_hours_per_day)
-        print(f"\nLast step of the first day: {step}\n")
-
-        # get the coords for the end of the first day
-        route_geometry = directions["features"][0]["geometry"]
-        coords = coordinates_from_waypoints(step, route_geometry)
-
-        print(f"Location at end of first day: {coords[1]}")
-
-        # have we reached the end of the trip at the end of the first day?
-        is_end_trip = reached_end_trip(step, initial_directions)
-        print(f"\nAre we at the end of the trip? {is_end_trip}\n")
-
-        # have we reached the end of the first segment?
-        is_end_segment = reached_end_first_segment(step, initial_directions)
-        print(f"\nAre we at the end of the first segment? {is_end_segment}\n")
+        # find the location of the last driving step for the day
+        segment = directions["features"][0]["properties"]["segments"][0]
+        end_of_day_step = get_end_of_day_step(segment, max_driving_hours_per_day)
+        end_of_day_coords = coordinates_from_waypoints(end_of_day_step, directions["features"][0]["geometry"])[1]
+        print(f"Location at end of first day: {end_of_day_coords}")
 
         # if we have reached the end of the trip, then we have our full directions now
+        is_end_trip = reached_end_trip(end_of_day_step, directions, final_step)
         if is_end_trip:
-            # add the last coordinate to the full coordinates list
-            # assume: no need to search for accommodations at final destination    
-            complete_route_coords.append(coords[1])
-            print(f"\nTrip takes less than one full day of driving.\nUse initial directions as full directions.\nFull directions complete ending at {coords}")
-            break
-        # if we have reached the end of the segment, but not the end of the trip, 
-        # then we have full directions for one segment. we move to the next
-        # segment
-        elif is_end_segment and not is_end_trip:
-            # assume: no searching for stays at destinations
+            # add the last coordinate to the full coordinates list 
+            complete_route_coords.append(end_of_day_coords)
+            print(f"\nTrip takes less than one full day of driving.\nUse initial directions as full directions.\nFull directions complete ending at {end_of_day_coords}")
 
-            complete_route_coords.append(coords[1])
-            print(f"Reached end of segment at {coords[1]} but not end of trip.")
-
-            updated_coords = updated_coords[1:]
-            updated_coords.insert(0, coords[1])
-
-            directions = driving_directions(updated_coords)
-
-            # just use the segment start and end - no need to update directions (when a hotel is chosen, the directions are updated from the hotel)
-
-        # if we haven't reached the end of a trip or a segment, then we have only
-        # reached the end of the driving day and we must find a hotel then get updated directions for the rest of the route from there
+        # if we haven't reached the end of a trip or a segment, find accomodations
         else:
             if stay_source == 'csv':
                 df = pd.read_csv("stays.csv")
-            #else:
-                #all_stays = search_all_stays()
+            else:
+                checkIn = start_date
+                checkOut = datetime.strptime(start_date, '%mm-%dd-%yyyy') + timedelta(days=1)
+                df = search_all_stays(end_of_day_coords, checkIn, checkOut)
                 # search for the closest stay
 
-            best_stay = get_best_stay(df, (coords[1][1], coords[1][0]))
+            best_stay = get_best_stay(df, (end_of_day_coords[1], end_of_day_coords[0]))
             print(f"""Best stay: {best_stay}""")
             best_stay_coords = [best_stay["long"], best_stay["lat"]]
 
@@ -231,13 +191,13 @@ def get_roadtrip(addresses:list, start_date:str, max_driving_hours_per_day:float
             complete_route_coords.append(best_stay_coords)
 
             # change the start point to the stay location and update driving directions
-            print(f"""### Update coords: {updated_coords} ###\n""")
-            updated_coords = updated_coords[1:]
-            print(f"""### Update coords: {updated_coords} ###\n""")
-            updated_coords.insert(0, best_stay_coords)
-            print(f"""### Update coords: {updated_coords} ###\n""")
+            print(f"""### Update coords: {updated_coords_for_next_loop} ###\n""")
+            updated_coords_for_next_loop = updated_coords_for_next_loop[1:]
+            print(f"""### Update coords: {updated_coords_for_next_loop} ###\n""")
+            updated_coords_for_next_loop.insert(0, best_stay_coords)
+            print(f"""### Update coords: {updated_coords_for_next_loop} ###\n""")
 
-            directions = driving_directions(updated_coords)
+            directions = get_driving_directions(updated_coords_for_next_loop)
 
     return complete_route_coords
 

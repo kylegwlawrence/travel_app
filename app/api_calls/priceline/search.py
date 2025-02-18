@@ -3,36 +3,28 @@ import os
 
 def search_location_ids(lat:float, lon:float) -> dict:
     """
-    Calls a priceline API to get the Priceline location id (eg. id for NYC) for a given lat long. 
-
+    Gets a priceline-specific location id to use as an argument in other endpoints
     Params:
-    lat (float): latitude
-    lon (float): longitude
-
+    - lat (float): latitude
+    - lon (float): longitude
     Returns:
-    - dict from API response containing Priceline info for the given lat long
+    - (dict): API response containing Priceline info for the given lat long
     """
 
-    # endpoint
-    url = "https://priceline-com2.p.rapidapi.com/hotels/nearby"
+    ENDPOINT = "https://priceline-com2.p.rapidapi.com/hotels/nearby"
 
-    # query
-    querystring = {"latitude":str(lat),"longitude":str(lon)}
-
-    # define headers
+    query = {"latitude":str(lat),"longitude":str(lon)}
     headers = {
-        "x-rapidapi-key":os.environ["PRICELINE_KEY"]
-        , "x-rapidapi-host": "priceline-com2.p.rapidapi.com"
+        "x-rapidapi-key":os.environ["PRICELINE_KEY"],
+        "x-rapidapi-host": "priceline-com2.p.rapidapi.com"
     }
                
-    # call api and get a response
-    response = requests.get(url, headers=headers, params=querystring)
+    response = requests.get(ENDPOINT, headers=headers, params=query)
     response = response.json()
-    print(f"""Api response for {url}\n{response["message"]}""")
+    print(f"""Api response for {ENDPOINT}\n{response["message"]}""")
 
-    # log to console if there is no data available.
     if response["data"] == None:
-        print("No data available.")
+        raise Exception(f"Error: {response.status_code}")
 
     return response
 

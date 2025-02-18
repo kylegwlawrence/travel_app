@@ -1,117 +1,93 @@
 import requests
-import json
 import os
+import json
 from datetime import datetime
 
-def search_near_lat_long(lat:int, lon:int, maxGuestCapacity:int=6, range:int=500, offset:int=0) -> list:
+def get_airbnbs_near_lat_long(lat:int, lon:int, maxGuestCapacity:int=6, range:int=500, offset:int=0) -> list:
     """
-    Takes search filters and returns airbnb ids matching the search criteria.
-
+    Searches for airbnbs matching the criteria arguments
     Params:
-    lat (int): cartesian latitude coordinate
-    lon (int): cartesian longitude coordinate
-    range (int): range in metres (verify this unit) from latitude and longitude point to define search area
-    bedrooms (int): number of bedrooms
-    maxGuestCapacity (int): Max guest the listing can accomodate
-    offset (int): index to start from
-
+    - lat (int): cartesian latitude coordinate
+    - lon (int): cartesian longitude coordinate
+    - range (int): range in metres (verify this unit) from latitude and longitude point to define search area
+    - bedrooms (int): number of bedrooms
+    - maxGuestCapacity (int): Max guest the listing can accomodate
+    - offset (int): index to start from
     Returns:
-    - list of dicts of airbnbs ids with proximity, in metres(?) to the searched lat, long coordinates
+    - (list of dictionaries): airbnbs ids and proximity, in meters, to the searched coordinates.
     """
 
-    # endpoint
-    url = "https://airbnb-listings.p.rapidapi.com/v2/listingsByLatLng"
+    with open("api_params.json", "r") as f:
+        api_params = json.load(f)
 
-    # query
     querystring = {
-        "lat":str(lat)
-        , "lng":str(lon)
-        , "range":str(range)
-        , "offset":str(offset)
-        , "maxGuestCapacity":str(maxGuestCapacity)
+        "lat":str(lat),
+        "lng":str(lon),
+        "range":str(range),
+        "offset":str(offset),
+        "maxGuestCapacity":str(maxGuestCapacity)
         }
-    
     # use primary key first
     headers = {
-        "x-rapidapi-key":os.environ["AIRBNB_KEY_1"]
-        , "x-rapidapi-host":"airbnb-listings.p.rapidapi.com"
+        "x-rapidapi-key":os.environ["AIRBNB_KEY_1"],
+        "x-rapidapi-host":api_params["x-rapidapi-host"]
         }
+    response = requests.get(api_params["endpoint_lat_long"], headers=headers, params=querystring)
 
-    # try calling with the primary_key
-    response = requests.get(url, headers=headers, params=querystring)
-
-    # determine if we need to try the secondary_key
     if response.status_code != 200:
-        print(f"Airbnb primary key error, code {response.status_code}. Trying secondary key.")
+        print(f"Primary key error: {response.status_code}")
 
-        # load and try the secondary_key if we get an non-200 repsonse
+        # try the second key
         headers["x-rapidapi-key"] = os.environ["AIRBNB_KEY_2"]
-        response = requests.get(url, headers=headers, params=querystring)
+        response = requests.get(api_params["endpoint_lat_long"], headers=headers, params=querystring)
 
-        # raise an exception if the secondary key returns anything other than a 200 code
         if response.status_code != 200:
-            raise Exception(f"Secondary key error, code {response.status_code}")
+            raise Exception(f"Secondary key error: {response.status_code}")
         
-    # convert response to json
     response = response.json()
-    
-    # if there is an error returned with no results, return an empty list
+ 
     airbnb_ids=[]
-    if "error" in response:
-        print(f"""{response["error"]} for lat {lat} and long {lon}""")
-    
-    # save airbnb_ids and distance from lat, long to a dict and store in a list
-    else:
-        for airbnb in response["results"]:
-            airbnb_ids.append(
-                {
-                    "airbnb_id":airbnb["airbnb_id"]
-                    , "distance":airbnb["distance"]
-                }
-            )
+    for airbnb in response["results"]:
+        airbnb_ids.append(
+            {
+                "airbnb_id":airbnb["airbnb_id"],
+                "distance":airbnb["distance"]
+            }
+        )
 
     return airbnb_ids
 
-def search_details(airbnb_id:int) -> dict:
+def get_airbnb_details(airbnb_id:int) -> dict:
     """
-    Get the listing details for a specific airbnb_id.
-
+    Get the listing details for a specific airbnb
     Params:
-    airbnb_id (int): the airbnb_id for which we want details
-
+    - airbnb_id (int): the airbnb_id for which we want details
     Returns:
-    - dict of listing details
+    - (dictionary): listing details
     """
 
-    # endpoint
-    url = "https://airbnb-listings.p.rapidapi.com/v2/listing"
+    with open("api_params.json", "r") as f:
+        api_params = json.load(f)
 
-    # query
     querystring = {"id":airbnb_id}
-
     # use primary key first
     headers = {
-        "x-rapidapi-key":os.environ["AIRBNB_KEY_1"]
-        , "x-rapidapi-host":"airbnb-listings.p.rapidapi.com"
+        "x-rapidapi-key":os.environ["AIRBNB_KEY_1"],
+        "x-rapidapi-host":api_params["x-rapidapi-host"]
         }
+    response = requests.get(api_params["endpoint_details"], headers=headers, params=querystring)
 
-    # try calling with the primary_key
-    response = requests.get(url, headers=headers, params=querystring)
-
-    # determine if we need to try the secondary_key
     if response.status_code != 200:
-        print(f"Airbnb primary key error, code {response.status_code}. Trying secondary key.")
-
-        # load and try the secondary_key if we get an non-200 repsonse
+        print(f"Primary key error: {response.status_code}")
+        # try the secondary key
         headers["x-rapidapi-key"] = os.environ["AIRBNB_KEY_2"]
-        response = requests.get(url, headers=headers, params=querystring)
-
-        # raise an exception if the secondary key returns anything other than a 200 code
+        response = requests.get(api_params["endpoint_details"], headers=headers, params=querystring)
         if response.status_code != 200:
-            raise Exception(f"Secondary key error, code {response.status_code}")
+            raise Exception(f"Secondary key error: {response.status_code}")
 
-    # access the listing details and store in a dictionary
-    details_dict = response.json()["results"][0]
+    response = response.json()
+
+    details_dict = response["results"][0]
     airbnb_details = {
             "airbnb_id":details_dict["airbnb_id"]
             , "city":details_dict["city"]
@@ -138,53 +114,38 @@ def search_details(airbnb_id:int) -> dict:
 
 def get_calendar(airbnb_id:int) -> list:
     """
-    Gets data on availability for a specific airbnb_id for the next 12 months.
-
-    Params:
-    airbnb_id (int): the airbnb_id for which we want availability by day
-
-    Returns:
-    - list of results from the api call
-
+    Gets data on availability for a specific airbnb for the next 12 months.
     If a date in the range of checkIn and checkOut is not available then return False, otherwise if all days are available then return True
+    Params:
+    - airbnb_id (int): the airbnb_id for which we want availability by day
+    Returns:
+    - (list): results from the api call
     """
 
-    # endpoint
-    url = "https://airbnb-listings.p.rapidapi.com/v2/listingAvailabilityFull"
+    with open("api_params.json", "r") as f:
+        api_params = json.load(f)
 
-    # query
     querystring = {"id":airbnb_id}
-
     # use primary key first
     headers = {
-        "x-rapidapi-key":os.environ["AIRBNB_KEY_1"]
-        , "x-rapidapi-host":"airbnb-listings.p.rapidapi.com"
+        "x-rapidapi-key":os.environ["AIRBNB_KEY_1"],
+        "x-rapidapi-host":api_params["x-rapidapi-host"]
         }
+    response = requests.get(api_params["endpoint_availability"], headers=headers, params=querystring)
 
-    # try calling with the primary_key
-    response = requests.get(url, headers=headers, params=querystring)
-
-    # determine if we need to try the secondary_key
     if response.status_code != 200:
-        print(f"Airbnb primary key error, code {response.status_code}. Trying secondary key.")
-
-        # load and try the secondary_key if we get an non-200 repsonse
+        print(f"Primary key error: {response.status_code}")
+        # try the second key
         headers["x-rapidapi-key"] = os.environ["AIRBNB_KEY_2"]
-        response = requests.get(url, headers=headers, params=querystring)
-
-        # raise an exception if the secondary key returns anything other than a 200 code
+        response = requests.get(api_params["endpoint_availability"], headers=headers, params=querystring)
         if response.status_code != 200:
-            raise Exception(f"Secondary key error, code {response.status_code}")
+            raise Exception(f"Secondary key error: {response.status_code}")
 
-    # call api and receive response
-    response = requests.get(url, headers=headers, params=querystring)
+    response = response.json()
 
-    # pull data from the response
-    results = response.json()["results"]
+    return response["results"]
 
-    return results
-
-def search_availability(results:list, checkIn:str, checkOut:str) -> bool:
+def get_availability(results:list, checkIn:str, checkOut:str) -> bool:
     """
     Take the list of results from the availability api call and determines if the airbnb is available for the range of the requested dates.
 
