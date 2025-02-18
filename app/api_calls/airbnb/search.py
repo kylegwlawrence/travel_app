@@ -17,10 +17,10 @@ def get_airbnbs_near_lat_long(lat:int, lon:int, maxGuestCapacity:int=6, range:in
     - offset (int): index to start from
 
     Returns:
-    - (list of dictionaries): airbnbs ids and proximity, in meters, to the searched coordinates.
+    - (list of dictionaries): airbnbs ids and proximity, in meters, to the searched coordinates. Returns None if no airbnbs are found
     """
 
-    with open("api_params.json", "r") as f:
+    with open("api_calls/airbnb/api_params.json", "r") as f:
         api_params = json.load(f)
 
     query = {
@@ -48,18 +48,24 @@ def get_airbnbs_near_lat_long(lat:int, lon:int, maxGuestCapacity:int=6, range:in
             raise Exception(f"Secondary key error: {response.status_code}")
         
     response = response.json()
- 
-    airbnb_ids=[]
-    for airbnb in response["results"]:
-        airbnb_ids.append(
-            {
-                "airbnb_id":airbnb["airbnb_id"],
-                "distance":airbnb["distance"]
-            }
-        )
 
-    return airbnb_ids
+    if "results" in response:
+        airbnb_ids=[]
+        for airbnb in response["results"]:
+            airbnb_ids.append(
+                {
+                    "airbnb_id":airbnb["airbnb_id"],
+                    "distance":airbnb["distance"]
+                }
+            )
 
+        return airbnb_ids
+    
+    else:
+        print(response)
+
+        return None
+    
 def get_airbnb_details(airbnb_id:int) -> dict:
     """
     Get the listing details for a specific airbnb
@@ -71,7 +77,7 @@ def get_airbnb_details(airbnb_id:int) -> dict:
     - (dictionary): listing details
     """
 
-    with open("api_params.json", "r") as f:
+    with open("api_calls/airbnb/api_params.json", "r") as f:
         api_params = json.load(f)
 
     query = {"id":airbnb_id}
@@ -129,7 +135,7 @@ def get_airbnb_calendar(airbnb_id:int) -> list:
     - (list): results from the api call
     """
 
-    with open("api_params.json", "r") as f:
+    with open("api_calls/airbnb/api_params.json", "r") as f:
         api_params = json.load(f)
 
     query = {"id":airbnb_id}

@@ -1,6 +1,5 @@
 from api_calls.airbnb.search import main as search_airbnb
 from api_calls.priceline.search import main as search_priceline
-from api_calls.geocoder.search import geocode_address
 from api_calls.openroute_service.directions import get_driving_directions
 import pandas as pd
 
@@ -10,8 +9,8 @@ def search_all_stays(coordinates:tuple, checkIn:str, checkOut:str, range:int=500
 
     Params:
     coordinates (tuple): center of search area as (lat, long)
-    checkIn (str): desired check in date
-    checkOut (str): desired check out date
+    checkIn (str): desired check in date YYYY-MM-DD
+    checkOut (str): desired check out date YYYY-MM-DD
     range (int): metres from searched address, applies only to airbnbs.
     limit (int): number of results returned per page, applies only to priceline hotels.
     page (int): 1-base indexed page of results, applies only to priceline hotels.
@@ -20,16 +19,31 @@ def search_all_stays(coordinates:tuple, checkIn:str, checkOut:str, range:int=500
     - DataFrame with details for airbnbs and priceline hotels within the search parameters
     """
 
-    # search all accommodation sources
-    airbnbs = search_airbnb(coordinates, checkIn, checkOut, range)
+    col_order = ['accomodationId', 'accomodationTitle', 'city', 'avgGuestRating', 'checkIn', 'checkOut', 'lat', 'long']
+
     hotels = search_priceline(coordinates, checkIn, checkOut, limit, page)
-
-    # convert to dataframes
-    df_airbnbs = pd.DataFrame(airbnbs)
     df_hotels = pd.DataFrame(hotels)
+    cols_hotels = {
+        'hotelId':'accomodationId'
+        , 'hotelName':'accomodationTitle'
+        , 'cityName':'city'
+        , 'overallGuestRating':'avgGuestRating'
+        #, 'dealTypes'
+        #, 'nightlyRateIncludingTaxesAndFees'
+        #, 'grandTotal'
+        , 'checkIn':'checkIn'
+        , 'checkOut':'checkOut'
+        , 'latitude':'lat'
+        , 'longitude':'long'
+    }
+    df_hotels.rename(columns=cols_hotels, inplace=True)
+    df_hotels = df_hotels[col_order]
+    df_hotels["stayType"] = 'hotel'
 
-    # keep fields that are common between airbnb and priceline
-    cols_airbnb = {
+    airbnbs = search_airbnb(coordinates, checkIn, checkOut, range)
+    if airbnbs is not None:
+        df_airbnbs = pd.DataFrame(airbnbs)
+        cols_airbnb = {
         'airbnb_id':'accomodationId'
         , 'listingTitle':'accomodationTitle'
         , 'city':'city'
@@ -53,41 +67,17 @@ def search_all_stays(coordinates:tuple, checkIn:str, checkOut:str, range:int=500
         #, 'listingstatus'
         , 'listingLat':'lat'
         , 'listingLng':'long'
-    }
-    
-    cols_hotels = {
-        'hotelId':'accomodationId'
-        , 'hotelName':'accomodationTitle'
-        , 'cityName':'city'
-        , 'overallGuestRating':'avgGuestRating'
-        #, 'dealTypes'
-        #, 'nightlyRateIncludingTaxesAndFees'
-        #, 'grandTotal'
-        , 'checkIn':'checkIn'
-        , 'checkOut':'checkOut'
-        , 'latitude':'lat'
-        , 'longitude':'long'
-    }
+        }
+        df_airbnbs.rename(columns=cols_airbnb, inplace=True)
+        df_airbnbs = df_airbnbs[col_order]
+        df_airbnbs["stayType"] = 'airbnb'
 
-    # rename columns
-    df_airbnbs.rename(columns=cols_airbnb, inplace=True)
-    df_hotels.rename(columns=cols_hotels, inplace=True)
+        df = pd.concat([df_airbnbs, df_hotels]) 
+    else:
+        df = df_hotels
 
-    # impose column order
-    col_order = ['accomodationId', 'accomodationTitle', 'city', 'avgGuestRating', 'checkIn', 'checkOut', 'lat', 'long']
-    df_airbnbs = df_airbnbs[col_order]
-    df_hotels = df_hotels[col_order]
-
-    # add airbnb/hotel indicator
-    df_airbnbs["stayType"] = 'airbnb'
-    df_hotels["stayType"] = 'hotel'
-
-    # union dataframes
-    df = pd.concat([df_airbnbs, df_hotels])
-
-    # add timestamp
     df['createdTimestamp'] = pd.Timestamp.now()  
-    
+
     return df
 
 def get_best_stay(df, centroid: tuple) -> dict:
@@ -106,7 +96,7 @@ def get_best_stay(df, centroid: tuple) -> dict:
 
     for index, row in df.iterrows():
         start_coordinates = (row["lat"], row["long"])
-        driving_directions = get_driving_directions(start_coordinates, end_coordiantes=centroid)
+        driving_directions = get_driving_directions(start_coordinates, centroid)
         proximity_to_centroid = driving_directions["features"][0]["properties"]["summary"]["duration"]
 
         if best_stay is None or proximity_to_centroid < best_proximity:
@@ -114,15 +104,3 @@ def get_best_stay(df, centroid: tuple) -> dict:
             best_stay = df.iloc[index]
 
     return best_stay.to_dict()
-
-if __name__=='__main__':
-    coords = geocode_address("820 15 ave SW calgary ab")
-
-    #df = search_all_stays(coords, "2025-05-11", "2025-05-14", range=500, limit=10, page=1)
-    
-    df = pd.read_csv("stays.csv")
-
-    best_stay = get_best_stay(df, coords)
-    print(best_stay.to_dict())
-
-    #df.to_csv("stays.csv", index=False)

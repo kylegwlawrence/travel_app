@@ -25,12 +25,12 @@ def get_priceline_location_ids(lat:float, lon:float) -> dict:
         "latitude":str(lat),
         "longitude":str(lon)
         }
-    response = requests.get(ENDPOINT, headers,params=query)
+    response = requests.get(ENDPOINT, headers=headers, params=query)
     status_code = response.status_code
     response = response.json()
 
-    if response["data"] == None:
-        raise Exception(f"No data:: {status_code}")
+    if response["data"] is None:
+        raise Exception(f"No data:: {status_code}\n{response}")
 
     return response
 
@@ -110,7 +110,7 @@ def get_priceline_hotels(locationId:str, checkIn:str, checkOut:str, rooms:int=No
     response = response.json()
 
     if response["data"] == None:
-        raise Exception(f"No data:: {status_code}")
+        raise Exception(f"No data:: {status_code}\n{response}")
 
     hotel_info = []
     for hotel in response["data"]["hotels"]:
@@ -155,11 +155,7 @@ def main(coordinates:tuple, checkIn:str, checkOut:str, limit:int, page:int=1) ->
 
     location_ids = get_priceline_location_ids(coordinates[0], coordinates[1])
 
-    try:
-        matched_location_id = location_ids["data"]["exactMatch"]["matchedCity"]["cityID"]
-        hotels = get_priceline_hotels(locationId=matched_location_id, checkIn=checkIn, checkOut=checkOut, limit=limit, page=page)
-    except: 
-        print(f"No exactly-matching city ID available for {coordinates}")
-        hotels = None
+    matched_location_id = location_ids["data"]["exactMatch"]["matchedCity"]["cityID"]
+    hotels = get_priceline_hotels(locationId=matched_location_id, checkIn=checkIn, checkOut=checkOut, limit=limit, page=page)
 
     return hotels

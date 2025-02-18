@@ -1,10 +1,9 @@
 import requests
 from requests.structures import CaseInsensitiveDict
 import os
-import json
 from typing import List
 
-def geocode_address(address:str) -> tuple:
+def get_geocoded_address(address:str) -> tuple:
     """
     Gets the lat and long coordinates for a given address.
 
@@ -14,9 +13,9 @@ def geocode_address(address:str) -> tuple:
     Returns:
     - (tuple): the lat and long coordinates
     """
-
+    address = address.replace(" ", "%20")
     apiKey = os.environ["GEOAPIFY_KEY"]
-    url = f"https://api.geoapify.com/v1/geocode/search?text={address.replace(" ", "%20")}&apiKey={apiKey}"
+    url = f"https://api.geoapify.com/v1/geocode/search?text={address}&apiKey={apiKey}"
     headers = CaseInsensitiveDict()
     headers["Accept"] = "application/json"
 
@@ -33,7 +32,7 @@ def geocode_address(address:str) -> tuple:
 
     return lat, lon
 
-def geocode_multiple_addresses(addresses:list) -> List[tuple]:
+def get_mulitple_geocoded_addresses(addresses:list) -> List[tuple]:
     """
     Coordinates for a list of addresses
     
@@ -45,13 +44,7 @@ def geocode_multiple_addresses(addresses:list) -> List[tuple]:
     """
     geocoded_addresses = []
     for address in addresses:
-        geocoded_address= geocode_address(address)
+        geocoded_address= get_geocoded_address(address)
         geocoded_addresses.append(geocoded_address)
 
     return geocoded_addresses
-
-if __name__=="__main__":
-    address = "1709 F Street Bellingham WA"
-    lat, long = geocode_address(address)
-
-    print(lat, long)

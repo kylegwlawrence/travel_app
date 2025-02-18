@@ -17,11 +17,12 @@ def get_driving_directions(start: tuple, finish: tuple) -> dict:
 
     ENDPOINT = "https://api.openrouteservice.org/v2/directions/driving-car/geojson"
     
-    with open("api_params.json", "r") as f:
+    with open("api_calls/openroute_service/api_params.json", "r") as f:
         headers = json.load(f)
         
     headers["Authorization"] = os.environ["OPENROUTE_KEY"]
-    coordinates = [list(start).reverse(), list(finish).reverse()]
+    coordinates = [[start[1], start[0]], [finish[1], finish[0]]]
+    print(f"Coordinates reversed: {coordinates}")
     response = requests.post(ENDPOINT, json={"coordinates":coordinates}, headers=headers)
 
     if response.status_code!=200:
@@ -39,7 +40,7 @@ def get_end_of_day_step(segment:dict, max_driving_hours_per_day:float) -> dict:
     - max_driving_hours_per_day (float): length of time allowed to drive between sleep stops
 
     Returns:
-    - (dict): the last step of the day, and associated information, for a given segment
+    - (dict): the last step of the day, and associated information, for a given segment. If the segment duration is less than the daily driving limit then returns the trip's finish coordinate
     """
     # init some counters
     step_number = 0
@@ -74,7 +75,7 @@ def get_end_of_day_step(segment:dict, max_driving_hours_per_day:float) -> dict:
 
     return s
 
-def coordinates_from_waypoints(step: dict, route_geometry: list) -> List[tuple]:
+def get_coordinates_from_waypoints(step: dict, route_geometry: list) -> List[tuple]:
     """
     Get the start and end coordinates for a single driving step
 
@@ -89,8 +90,10 @@ def coordinates_from_waypoints(step: dict, route_geometry: list) -> List[tuple]:
     start_way_point = step["way_points"][0]-1
     end_way_point = step["way_points"][1]-1
 
-    start_coords = tuple(route_geometry["coordinates"][start_way_point])
-    end_coords = tuple(route_geometry["coordinates"][end_way_point])
+    route_coordinates = route_geometry["coordinates"]
+
+    start_coords = (route_coordinates[start_way_point][1], route_coordinates[start_way_point][0])
+    end_coords = (route_coordinates[end_way_point][1], route_coordinates[end_way_point][0])
 
     return [start_coords, end_coords]
 
@@ -110,8 +113,8 @@ def reached_end_trip(step:dict, directions:list, final_step: dict) -> bool:
     geometry = directions["features"][0]["geometry"]
     final_step = directions["features"][0]["properties"]["segments"][-1]["steps"][-1]
 
-    step_coords = coordinates_from_waypoints(step, geometry)
-    final_step_coords = coordinates_from_waypoints(final_step, geometry)
+    step_coords = get_coordinates_from_waypoints(step, geometry)
+    final_step_coords = get_coordinates_from_waypoints(final_step, geometry)
 
     if step_coords == final_step_coords:
         end_of_trip_reached = True
@@ -135,8 +138,8 @@ def reached_end_first_segment(step:dict, directions:list):
     geometry = directions["features"][0]["geometry"]
     final_step = directions["features"][0]["properties"]["segments"][0]["steps"][-1]
 
-    step_coords = coordinates_from_waypoints(step, geometry)
-    final_step_coords = coordinates_from_waypoints(final_step, geometry)
+    step_coords = get_coordinates_from_waypoints(step, geometry)
+    final_step_coords = get_coordinates_from_waypoints(final_step, geometry)
 
     if step_coords == final_step_coords:
         end_of_segment_reached = True
