@@ -1,10 +1,10 @@
-from searchAirbnbByAddress import search as searchAirbnb
-from searchPricelineByAddress import search as searchPriceline
+from api_calls.airbnb.search import main as search_airbnb
+from api_calls.priceline.search import main as search_priceline
 from api_calls.geocoder.search import geocode_address
-from api_calls.openroute_service.directions import driving_directions
+from api_calls.openroute_service.directions import get_driving_directions
 import pandas as pd
 
-def search_all_stays(coordinates:tuple, checkIn:str, checkOut:str, range:int=500, limit:int=10, page:int=1) -> pd.DataFrame:
+def search_all_stays(coordinates:tuple, checkIn:str, checkOut:str, range:int=500, limit:int=5, page:int=1) -> pd.DataFrame:
     """
     Takes all accommodation apis and searches across all of them with one function.
 
@@ -21,8 +21,8 @@ def search_all_stays(coordinates:tuple, checkIn:str, checkOut:str, range:int=500
     """
 
     # search all accommodation sources
-    airbnbs = searchAirbnb(coordinates, checkIn, checkOut, range)
-    hotels = searchPriceline(coordinates, checkIn, checkOut, limit, page)
+    airbnbs = search_airbnb(coordinates, checkIn, checkOut, range)
+    hotels = search_priceline(coordinates, checkIn, checkOut, limit, page)
 
     # convert to dataframes
     df_airbnbs = pd.DataFrame(airbnbs)
@@ -105,9 +105,9 @@ def get_best_stay(df, centroid: tuple) -> dict:
     best_proximity = None
 
     for index, row in df.iterrows():
-        format_coords = [[row["long"], row["lat"]], [centroid[1], centroid[0]]]
-        d = driving_directions(format_coords)
-        proximity_to_centroid = d["features"][0]["properties"]["summary"]["duration"]
+        start_coordinates = (row["lat"], row["long"])
+        driving_directions = get_driving_directions(start_coordinates, end_coordiantes=centroid)
+        proximity_to_centroid = driving_directions["features"][0]["properties"]["summary"]["duration"]
 
         if best_stay is None or proximity_to_centroid < best_proximity:
             best_proximity = proximity_to_centroid # update with the better value

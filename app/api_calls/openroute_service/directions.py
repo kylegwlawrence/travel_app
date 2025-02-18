@@ -5,7 +5,7 @@ from typing import List
 
 def get_driving_directions(start: tuple, finish: tuple) -> dict:
     """
-    Get driving directions between two coordinates
+    Get driving directions between two coordinates.
 
     Params:
     - start (tuple): lat long coordinate for starting location

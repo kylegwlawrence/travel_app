@@ -200,7 +200,7 @@ def main(coordinates:tuple, checkIn:str, checkOut:str, range:int=500) -> List[di
     - an empty list if there are no available airbnbs for the serached date range
 
     Raise:
-    - if there are no airbnbs found within the range of the address
+    - if 'is_available' is returned neither True nor False
     """
 
     airbnbs_near_address = get_airbnbs_near_lat_long(str(coordinates[0]), str(coordinates[1]), range=str(range))
@@ -214,12 +214,12 @@ def main(coordinates:tuple, checkIn:str, checkOut:str, range:int=500) -> List[di
             calendar = get_airbnb_calendar(airbnb_id)
             is_available = get_airbnb_availability(calendar, checkIn, checkOut)
 
-            if is_available==False:
+            if not is_available:
                 continue
             elif is_available:
                 airbnb_details = get_airbnb_details(airbnb_id)
                 list_of_airbnbs.append(airbnb_details)
             else:
-                raise ValueError(f"""Parameter returned "is_available" = {is_available} is neither True nor False""")
+                raise ValueError(f""" "is_available" = {is_available} is neither True nor False""")
         
     return list_of_airbnbs
